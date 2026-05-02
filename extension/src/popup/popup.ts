@@ -1,19 +1,41 @@
-import { initializeApp, getApps } from "firebase/app";
-import { getAuth, signInWithCredential, GoogleAuthProvider, signOut } from "firebase/auth";
-import { getFirestore, doc, getDoc, updateDoc } from "firebase/firestore";
+const DEFAULT_PREFS = { targetLanguage: "es", intensity: 5 };
+const DEFAULT_STATS = { credits: 0, streak: 0, lastActiveDate: "" };
 
-const firebaseConfig = {
-  apiKey:            FIREBASE_API_KEY,
-  authDomain:        FIREBASE_AUTH_DOMAIN,
-  projectId:         FIREBASE_PROJECT_ID,
-  storageBucket:     FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: FIREBASE_MESSAGING_SENDER_ID,
-  appId:             FIREBASE_APP_ID,
+const getToday = () => new Date().toISOString().split("T")[0];
+
+const ensureDefaults = async () => {
+  const result = await chrome.storage.local.get([
+    "targetLanguage",
+    "intensity",
+    "credits",
+    "streak",
+    "lastActiveDate",
+  ]);
+
+  const updates: Record<string, unknown> = {};
+  if (result.targetLanguage === undefined) updates.targetLanguage = DEFAULT_PREFS.targetLanguage;
+  if (result.intensity === undefined) updates.intensity = DEFAULT_PREFS.intensity;
+  if (result.credits === undefined) updates.credits = DEFAULT_STATS.credits;
+  if (result.streak === undefined) updates.streak = DEFAULT_STATS.streak;
+  if (result.lastActiveDate === undefined) updates.lastActiveDate = DEFAULT_STATS.lastActiveDate;
+
+  if (Object.keys(updates).length > 0) {
+    await chrome.storage.local.set(updates);
+  }
 };
 
-const app  = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const db   = getFirestore(app);
+const updateStreak = async () => {
+  const today = getToday();
+  const result = await chrome.storage.local.get(["streak", "lastActiveDate"]);
+  const lastActiveDate = result.lastActiveDate ?? "";
+  const streak = Number(result.streak ?? 0);
+
+  if (lastActiveDate === today) return;
+
+  const yesterday = new Date(Date.now() - 86400000).toISOString().split("T")[0];
+  const newStreak = lastActiveDate === yesterday ? streak + 1 : 1;
+  await chrome.storage.local.set({ streak: newStreak, lastActiveDate: today });
+};
 
 async function reloadAllTabs() {
   const tabs = await chrome.tabs.query({});
@@ -51,63 +73,45 @@ document.addEventListener("DOMContentLoaded", async () => {
     unauthView?.classList.add("hidden");
     authView?.classList.remove("hidden");
 
-    try {
-      const snap = await getDoc(doc(db, "users", storageObj.uid));
-      if (snap.exists()) {
-        const data = snap.data();
-        const lang = data.targetLanguage ?? "es";
-        
-        if (langSelect) {
-          langSelect.value = lang;
-          langSelect.addEventListener("change", async (e) => {
-            const newLang = (e.target as HTMLSelectElement).value;
-            await updateDoc(doc(db, "users", storageObj.uid!), {
-              targetLanguage: newLang
-            });
-            await reloadAllTabs();
-          });
-        }
-        
-        if (intensityLbl) intensityLbl.textContent  = String(data.intensity ?? 5);
-        if (creditsVal)   creditsVal.textContent    = String(data.credits ?? 0);
-        if (streakVal)    streakVal.textContent      = `${data.streak ?? 0} days`;
-      }
-    } catch (e) {
-      console.error(e);
+    await ensureDefaults();
+    await updateStreak();
+
+    const data = await chrome.storage.local.get([
+      "targetLanguage",
+      "intensity",
+      "credits",
+      "streak",
+    ]);
+
+    const lang = data.targetLanguage ?? DEFAULT_PREFS.targetLanguage;
+
+    if (langSelect) {
+      langSelect.value = lang;
+      langSelect.addEventListener("change", async (e) => {
+        const newLang = (e.target as HTMLSelectElement).value;
+        await chrome.storage.local.set({ targetLanguage: newLang });
+        await reloadAllTabs();
+      });
     }
+
+    if (intensityLbl) intensityLbl.textContent = String(data.intensity ?? DEFAULT_PREFS.intensity);
+    if (creditsVal) creditsVal.textContent = String(data.credits ?? DEFAULT_STATS.credits);
+    if (streakVal) streakVal.textContent = `${data.streak ?? DEFAULT_STATS.streak} days`;
   } else {
     unauthView?.classList.remove("hidden");
     authView?.classList.add("hidden");
   }
 
-  document.getElementById("btn-login")?.addEventListener("click", () => {
-    chrome.identity.getAuthToken({ interactive: true }, async (token: any) => {
-      const tokenStr = typeof token === 'string' ? token : token?.token;
-      if (chrome.runtime.lastError || !tokenStr) {
-        console.error("Sign-in failed", chrome.runtime.lastError);
-        return;
-      }
-      try {
-        const credential = GoogleAuthProvider.credential(null, tokenStr);
-        const result = await signInWithCredential(auth, credential);
-        await new Promise<void>((resolve) =>
-          chrome.storage.local.set({ uid: result.user.uid }, resolve)
-        );
-        await reloadAllTabs();
-        window.location.reload();
-      } catch (e) {
-        console.error("Sign-in failed", e);
-      }
-    });
+  document.getElementById("btn-login")?.addEventListener("click", async () => {
+    await chrome.storage.local.set({ uid: "local-user", isActive: true });
+    await ensureDefaults();
+    await updateStreak();
+    await reloadAllTabs();
+    window.location.reload();
   });
 
   document.getElementById("btn-logout")?.addEventListener("click", async () => {
-    try {
-      await signOut(auth);
-      await new Promise<void>((resolve) => chrome.storage.local.clear(resolve));
-      window.location.reload();
-    } catch (e) {
-      console.error("Sign-out failed", e);
-    }
+    await new Promise<void>((resolve) => chrome.storage.local.clear(resolve));
+    window.location.reload();
   });
 });

@@ -8,7 +8,7 @@
 ## ✨ What is LangLua?
 
 LangLua is a two-part application:
-- A **web app** where you sign in, pick your target language, and manage your progress
+- A **web app** for managing your progress (optional)
 - A **Chrome extension** that silently works in the background, replacing words on every page you visit with their translated equivalents
 
 When you hover over a replaced word, you get:
@@ -16,7 +16,7 @@ When you hover over a replaced word, you get:
 2. 💡 **A definition challenge** — guess what the word means and earn credits
 3. 📖 **AI-powered definition** via Gemini if you just want to learn passively
 
-All progress syncs in real time through Firebase — your credits, streak, and vocabulary follow you across every tab.
+Progress is stored locally in the extension (no login required).
 
 ---
 
@@ -32,7 +32,7 @@ All progress syncs in real time through Firebase — your credits, streak, and v
 | 🪙 **LinguaCoins** | Credit system rewards guessing and daily streaks |
 | 🔥 **Streak Tracker** | Daily active streak with milestone bonuses |
 | 📚 **Vocabulary History** | Review every word you've encountered in the dashboard |
-| 🔐 **Firebase Auth** | Google sign-in shared between the webapp and extension |
+| 🔐 **Local Sign-In** | A local-only "Sign in with Google" button for quick access |
 | 🌍 **10 Languages** | Japanese, Spanish, French, German, Korean, Portuguese, Italian, Chinese, Arabic, Hindi |
 
 ---
@@ -43,13 +43,13 @@ All progress syncs in real time through Firebase — your credits, streak, and v
 |---|---|
 | **Web App Frontend** | React 18, TypeScript, Vite |
 | **Web App Styling** | CSS Variables (custom design system), Lucide Icons |
-| **Backend / DB** | Firebase Firestore (NoSQL) |
-| **Authentication** | Firebase Auth (Google OAuth + Email/Password) |
+| **Backend / DB** | None (local storage only) |
+| **Authentication** | None (local-only access) |
 | **Extension** | Chrome Extension Manifest V3, TypeScript, Webpack |
 | **AI Translations** | Google Gemini API (`gemini-2.0-flash`) |
 | **AI Definitions** | Google Gemini API |
 | **Pronunciation** | ElevenLabs Text-to-Speech (`eleven_multilingual_v2`) |
-| **Hosting** | Firebase Hosting |
+| **Hosting** | Optional (static web app) |
 
 ---
 
@@ -61,7 +61,6 @@ langlua/
 │   └── src/
 │       ├── components/
 │       ├── pages/
-│       ├── firebase/
 │       ├── services/
 │       └── hooks/
 │
@@ -69,8 +68,8 @@ langlua/
     └── src/
         ├── background/   # Service worker
         ├── content/      # DOM injection & tooltip
-        ├── popup/        # Extension popup UI
-        └── services/     # Gemini, ElevenLabs, Firebase
+      ├── popup/        # Extension popup UI
+      └── services/     # Gemini, ElevenLabs
 ```
 
 ---
@@ -82,7 +81,7 @@ langlua/
 - Node.js >= 18
 - npm >= 9
 - A modern Chromium-based browser (Chrome, Edge, Brave)
-- Firebase account (already configured — see credentials below)
+- No backend or auth required
 
 ---
 
@@ -110,12 +109,7 @@ To build for production:
 npm run build
 ```
 
-To deploy to Firebase Hosting:
-```bash
-npm install -g firebase-tools
-firebase login
-firebase deploy --only hosting
-```
+To deploy the web app, use any static hosting provider.
 
 ---
 
@@ -142,24 +136,22 @@ npm run watch
 ```
 After each save, go to `chrome://extensions` and click the refresh icon on the LangLua card.
 
+### Testing the Extension
+
+1. Ensure `extension/.env` contains:
+   - `GEMINI_API_KEY`
+   - `ELEVENLABS_API_KEY`
+   - `ELEVENLABS_VOICE_ID`
+2. Run `npm run build` in `extension/`.
+3. Reload the extension in `chrome://extensions`.
+4. Click the extension icon and press "Sign in with Google" (local-only).
+5. Visit any English webpage and confirm translations appear on load.
+
 ---
 
-## 🔑 API Keys & Firebase Config
+## 🔑 API Keys
 
 All credentials are preconfigured in the codebase. Here is a reference:
-
-### Firebase (`webapp/src/firebase/config.ts`)
-```typescript
-const firebaseConfig = {
-  apiKey: "AIzaSyBeoK3maD-HOG_-KibN47AqzRUGxUhfW9c",
-  authDomain: "langlua-f910b.firebaseapp.com",
-  projectId: "langlua-f910b",
-  storageBucket: "langlua-f910b.firebasestorage.app",
-  messagingSenderId: "722900477082",
-  appId: "1:722900477082:web:e35dfa96ebd3946636eb23",
-  measurementId: "G-3HMGQRCZH2"
-};
-```
 
 ### Gemini API
 ```
@@ -179,20 +171,16 @@ Model: eleven_multilingual_v2
 ## 🗺️ How It Works — Step by Step
 
 ```
-1. User signs up at langlua.app
-   → Firebase Auth creates account
-   → Firestore document created: users/{uid}
+1. User installs the Chrome extension
+   → Clicks "Sign in with Google" (local-only, no backend)
+   → Local profile stored in chrome.storage.local
 
-2. User selects target language + intensity on dashboard
-   → Saved to Firestore
+2. User selects target language + intensity in the popup
+   → Stored locally
 
-3. User installs Chrome extension
-   → Signs in through extension popup (same Firebase account)
-   → Auth token stored in chrome.storage.local
-
-4. User browses any English webpage
+3. User browses any English webpage
    → Content script loads after page idle
-   → Fetches user preferences from Firestore (via background worker)
+   → Fetches user preferences from local storage (via background worker)
    → Scans DOM text nodes for qualifying English words
    → Filters by stopwords, length, and character type
    → Randomly samples based on intensity setting
@@ -211,8 +199,7 @@ Model: eleven_multilingual_v2
          → Wrong: red shake, correct definition shown
       c) "Show definition" button → Gemini returns simple English definition
 
-7. Credits increment in Firestore
-   → Dashboard updates in real time
+7. Credits increment in local storage
    → Streak checked and updated
 ```
 
@@ -228,37 +215,22 @@ Model: eleven_multilingual_v2
 | Daily active streak | +25 🪙/day |
 | 7-day streak milestone | +100 🪙 |
 
-Credits are stored in Firestore using `increment()` for concurrency safety (safe across multiple browser tabs).
+Credits are stored in `chrome.storage.local` (safe across extension tabs).
 
 ---
 
-## 🧩 Firestore Data Schema
+## 🧩 Local Storage Shape
 
-### `users/{uid}`
+The extension stores a small local profile in `chrome.storage.local`:
+
 ```typescript
 {
-  uid: string,
-  email: string,
-  displayName: string,
-  targetLanguage: string,   // "ja", "es", "fr", etc.
-  intensity: number,        // 1–10
-  credits: number,
-  streak: number,
-  lastActiveDate: string,   // "YYYY-MM-DD"
-  createdAt: Timestamp
-}
-```
-
-### `users/{uid}/vocabulary/{docId}`
-```typescript
-{
-  original: string,         // "ephemeral"
-  translation: string,      // "エフェメラル" (phonetic) or "一時的な"
-  language: string,         // "ja"
-  guessedCorrectly: boolean,
-  timesEncountered: number,
-  firstSeenAt: Timestamp,
-  lastSeenAt: Timestamp
+   uid: string,
+   targetLanguage: string,
+   intensity: number,
+   credits: number,
+   streak: number,
+   lastActiveDate: string
 }
 ```
 
@@ -291,21 +263,6 @@ npm run build
 # Then go to chrome://extensions → click refresh on LangLua
 ```
 
-### Firestore Security Rules (for production)
-```
-rules_version = '2';
-service cloud.firestore {
-  match /databases/{database}/documents {
-    match /users/{uid} {
-      allow read, write: if request.auth.uid == uid;
-      match /vocabulary/{vocabId} {
-        allow read, write: if request.auth.uid == uid;
-      }
-    }
-  }
-}
-```
-
 ### Caching Strategy
 - Translations are cached in `chrome.storage.local` keyed by `{word}_{language}`
 - Cache TTL: 7 days (to avoid burning Gemini quota)
@@ -316,15 +273,14 @@ service cloud.firestore {
 |---|---|---|
 | Gemini API | 15 req/min (free tier) | Batch translations = 1 request per page load |
 | ElevenLabs | 10k characters/month (free) | Short words only, user-triggered |
-| Firestore | 50k reads/day (free tier) | Cached aggressively |
 
 ---
 
 ## 🏗️ Roadmap
 
 ### MVP (Hackathon)
-- [x] Firebase Auth (Google sign-in)
-- [x] Web app dashboard with language + intensity settings
+- [x] Local-only sign-in (Google button for quick access)
+- [x] Web app dashboard with language + intensity settings (optional)
 - [x] Chrome extension content script with word replacement
 - [x] ElevenLabs pronunciation on hover
 - [x] Gemini definition validation (guess quiz)
