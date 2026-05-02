@@ -1,3 +1,5 @@
+import { buildSaveWordModal } from "./saveWordModal";
+
 let currentTooltip: HTMLElement | null = null;
 let hideTimer: ReturnType<typeof setTimeout> | null = null;
 
@@ -40,6 +42,8 @@ export function buildTooltip(
         <button id="ll-skip" class="ll-btn-ghost">Skip +1 🪙</button>
       </div>
       <div id="ll-feedback" class="ll-feedback"></div>
+      <div class="ll-divider"></div>
+      <button id="ll-save-word" class="ll-save-word-btn">💾 Save Word</button>
     `;
   } else {
     // Normal mode: hide the English 'original' word in the header so it's not a spoiler
@@ -60,6 +64,8 @@ export function buildTooltip(
       <div class="ll-divider"></div>
       <button id="ll-def-btn" class="ll-def-link">Show full definition</button>
       <div id="ll-def-text" class="ll-def-text"></div>
+      <div class="ll-divider"></div>
+      <button id="ll-save-word" class="ll-save-word-btn">💾 Save Word</button>
     `;
   }
 
@@ -136,6 +142,20 @@ export function buildTooltip(
     chrome.runtime.sendMessage({ type: 'GET_DEFINITION', word: original, context }, (def) => {
       defText.innerHTML = `<span>${escHtml(def)}</span><span class="ll-def-credit"> +1 🪙</span>`;
       chrome.runtime.sendMessage({ type: 'ADD_CREDITS', uid, amount: 1 });
+    });
+  });
+
+  // Save word button
+  tip.querySelector('#ll-save-word')?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    const proficiencyLevel = 5; // Default mid-level
+    buildSaveWordModal(original, translation, lang, proficiencyLevel, () => {
+      chrome.storage.local.get(['savedWords'], (result) => {
+        const savedWords = result.savedWords || {};
+        if (!savedWords[lang]) savedWords[lang] = [];
+        savedWords[lang].push({ word: original, translation, context, savedAt: Date.now() });
+        chrome.storage.local.set({ savedWords });
+      });
     });
   });
 

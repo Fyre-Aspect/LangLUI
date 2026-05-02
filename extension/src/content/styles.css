@@ -302,6 +302,34 @@
   margin-left: 4px !important;
 }
 
+/* ── Save word button ────────────────────────────────────────────────────── */
+.ll-save-word-btn {
+  all: initial !important;
+  display: block !important;
+  width: 100% !important;
+  padding: 8px 0 !important;
+  text-align: center !important;
+  background: transparent !important;
+  color: #3B82F6 !important;
+  border: none !important;
+  border-radius: 8px !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  cursor: pointer !important;
+  font-family: inherit !important;
+  box-sizing: border-box !important;
+  transition: all 120ms ease !important;
+}
+
+.ll-save-word-btn:hover {
+  background: rgba(59, 130, 246, 0.08) !important;
+  color: #2563EB !important;
+}
+
+.ll-save-word-btn:active {
+  transform: scale(0.97) !important;
+}
+
 /* ── Animations ──────────────────────────────────────────────────────────── */
 @keyframes langlua-shake {
 
@@ -324,5 +352,299 @@
 
   80% {
     transform: translateX(3px);
+  }
+}
+
+/* ══════════════════════════════════════
+   SAVE WORD MODAL
+   ══════════════════════════════════════ */
+.ll-save-modal-overlay {
+  all: initial !important;
+  position: fixed !important;
+  inset: 0 !important;
+  z-index: 2147483646 !important;
+  background: rgba(0, 0, 0, 0) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  animation: langlua-modal-fade-in 250ms cubic-bezier(0.16, 1, 0.3, 1) !important;
+  backdrop-filter: blur(4px) !important;
+  -webkit-backdrop-filter: blur(4px) !important;
+}
+
+.ll-save-modal-overlay.ll-save-modal-closing {
+  animation: langlua-modal-fade-out 250ms cubic-bezier(0.7, 0, 0.84, 0) forwards !important;
+}
+
+.ll-save-modal {
+  all: initial !important;
+  position: relative !important;
+  width: 360px !important;
+  background: rgba(255, 255, 255, 0.98) !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+  border: 1px solid #E2E8F0 !important;
+  border-radius: 24px !important;
+  padding: 28px !important;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif !important;
+  font-size: 14px !important;
+  color: #1E293B !important;
+  line-height: 1.5 !important;
+  box-sizing: border-box !important;
+  box-shadow: 0 20px 60px -20px rgba(0, 0, 0, 0.15), 0 1px 3px -1px rgba(0, 0, 0, 0.1) !important;
+  animation: langlua-modal-slide-up 300ms cubic-bezier(0.16, 1, 0.3, 1) !important;
+  opacity: 0 !important;
+  transform: translateY(20px) !important;
+}
+
+.ll-save-modal-overlay.ll-save-modal-visible .ll-save-modal {
+  opacity: 1 !important;
+  transform: translateY(0) !important;
+}
+
+/* Header */
+.ll-save-header {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  margin-bottom: 16px !important;
+}
+
+.ll-save-title {
+  all: initial !important;
+  font-size: 20px !important;
+  font-weight: 700 !important;
+  color: #1E293B !important;
+  letter-spacing: -0.01em !important;
+}
+
+.ll-save-close {
+  all: initial !important;
+  width: 32px !important;
+  height: 32px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  background: #F1F5F9 !important;
+  border-radius: 8px !important;
+  cursor: pointer !important;
+  color: #64748B !important;
+  font-size: 16px !important;
+  transition: all 120ms ease !important;
+  border: none !important;
+  padding: 0 !important;
+}
+
+.ll-save-close:hover {
+  background: #E2E8F0 !important;
+  color: #334155 !important;
+}
+
+/* Word Preview */
+.ll-save-word-preview {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  margin-bottom: 16px !important;
+  flex-wrap: wrap !important;
+  padding: 12px !important;
+  background: #F8FAFC !important;
+  border-radius: 12px !important;
+  box-sizing: border-box !important;
+}
+
+.ll-save-original {
+  font-size: 12px !important;
+  color: #94A3B8 !important;
+  font-weight: 500 !important;
+}
+
+.ll-save-arrow {
+  font-size: 11px !important;
+  color: #CBD5E1 !important;
+}
+
+.ll-save-translation {
+  font-size: 14px !important;
+  font-weight: 700 !important;
+  color: #3B82F6 !important;
+}
+
+.ll-save-lang-badge {
+  font-size: 10px !important;
+  font-weight: 600 !important;
+  color: #3B82F6 !important;
+  background: #DBEAFE !important;
+  border: 1px solid #BFDBFE !important;
+  border-radius: 6px !important;
+  padding: 3px 8px !important;
+  margin-left: auto !important;
+  letter-spacing: 0.03em !important;
+}
+
+/* Divider */
+.ll-save-divider {
+  height: 1px !important;
+  background: #E2E8F0 !important;
+  margin: 12px 0 !important;
+  display: block !important;
+}
+
+/* Info Section */
+.ll-save-info {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 12px !important;
+  margin-bottom: 4px !important;
+}
+
+.ll-save-feature {
+  display: flex !important;
+  gap: 10px !important;
+  align-items: flex-start !important;
+}
+
+.ll-save-icon {
+  font-size: 20px !important;
+  flex-shrink: 0 !important;
+  display: block !important;
+  line-height: 1 !important;
+}
+
+.ll-save-feature-title {
+  all: initial !important;
+  font-size: 13px !important;
+  font-weight: 700 !important;
+  color: #1E293B !important;
+  margin-bottom: 2px !important;
+}
+
+.ll-save-feature-desc {
+  all: initial !important;
+  font-size: 11px !important;
+  color: #64748B !important;
+  line-height: 1.4 !important;
+}
+
+.ll-save-capacity {
+  display: flex !important;
+  align-items: center !important;
+  gap: 12px !important;
+  padding: 12px !important;
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.05) 0%, rgba(59, 130, 246, 0.02) 100%) !important;
+  border-radius: 12px !important;
+  border: 1px solid rgba(59, 130, 246, 0.1) !important;
+  box-sizing: border-box !important;
+}
+
+.ll-save-capacity-text {
+  all: initial !important;
+  font-size: 11px !important;
+  color: #64748B !important;
+  display: block !important;
+}
+
+.ll-capacity-indicator {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  gap: 2px !important;
+}
+
+.ll-capacity-count {
+  all: initial !important;
+  font-size: 16px !important;
+  font-weight: 700 !important;
+  color: #3B82F6 !important;
+  display: block !important;
+}
+
+.ll-capacity-sublabel {
+  all: initial !important;
+  font-size: 10px !important;
+  color: #94A3B8 !important;
+  display: block !important;
+  font-weight: 500 !important;
+}
+
+/* Actions */
+.ll-save-actions {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 8px !important;
+  margin-top: 12px !important;
+}
+
+.ll-save-btn {
+  all: initial !important;
+  width: 100% !important;
+  padding: 11px 16px !important;
+  border: none !important;
+  border-radius: 9999px !important;
+  font-size: 13px !important;
+  font-weight: 600 !important;
+  cursor: pointer !important;
+  font-family: inherit !important;
+  text-align: center !important;
+  box-sizing: border-box !important;
+  transition: all 120ms ease !important;
+}
+
+.ll-save-btn:active {
+  transform: scale(0.97) !important;
+}
+
+.ll-save-btn:disabled {
+  opacity: 0.7 !important;
+  cursor: not-allowed !important;
+}
+
+.ll-save-btn-primary {
+  background: #3B82F6 !important;
+  color: white !important;
+}
+
+.ll-save-btn-primary:hover:not(:disabled) {
+  background: #2563EB !important;
+}
+
+.ll-save-btn-ghost {
+  background: transparent !important;
+  color: #64748B !important;
+  border: 1px solid #CBD5E1 !important;
+}
+
+.ll-save-btn-ghost:hover {
+  color: #1E293B !important;
+  border-color: #94A3B8 !important;
+}
+
+/* Animations */
+@keyframes langlua-modal-fade-in {
+  from {
+    background: rgba(0, 0, 0, 0) !important;
+  }
+  to {
+    background: rgba(0, 0, 0, 0.3) !important;
+  }
+}
+
+@keyframes langlua-modal-fade-out {
+  from {
+    background: rgba(0, 0, 0, 0.3) !important;
+  }
+  to {
+    background: rgba(0, 0, 0, 0) !important;
+  }
+}
+
+@keyframes langlua-modal-slide-up {
+  from {
+    opacity: 0 !important;
+    transform: translateY(20px) !important;
+  }
+  to {
+    opacity: 1 !important;
+    transform: translateY(0) !important;
   }
 }

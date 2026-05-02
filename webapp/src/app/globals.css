@@ -1,0 +1,41 @@
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap");
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+  body {
+    @apply font-sans text-slate-900 bg-white antialiased;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    @apply text-slate-900;
+  }
+  p {
+    @apply text-slate-700;
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+  .langlua-word-demo {
+    background: rgba(59, 130, 246, 0.12);
+    border-bottom: 2px solid rgba(59, 130, 246, 0.6);
+    border-radius: 4px;
+    padding: 0 2px;
+    color: #2563eb;
+    font-weight: 600;
+    cursor: help;
+    transition: all 120ms ease;
+  }
+  .langlua-word-demo:hover {
+    background: rgba(59, 130, 246, 0.22);
+    border-bottom-color: #2563eb;
+    color: #1d4ed8;
+  }
+}
