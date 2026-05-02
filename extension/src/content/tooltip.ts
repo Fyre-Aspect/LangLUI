@@ -17,8 +17,12 @@ export function buildTooltip(
   tip.id           = 'langlua-tooltip-container';
 
   const langLabel  = lang.toUpperCase();
+  
+  // Mask the original word in the context to avoid spoiling the answer
+  const maskedContext = context.replace(new RegExp(`\\b${original}\\b`, 'gi'), '____');
+  
   const contextSnip = context
-    ? `<div class="ll-context">${escHtml(context)}</div><div class="ll-divider"></div>`
+    ? `<div class="ll-context">${escHtml(maskedContext)}</div><div class="ll-divider"></div>`
     : '';
 
   if (tryOutMode) {
@@ -38,12 +42,12 @@ export function buildTooltip(
       <div id="ll-feedback" class="ll-feedback"></div>
     `;
   } else {
+    // Normal mode: hide the English 'original' word in the header so it's not a spoiler
     tip.innerHTML = `
       <div class="ll-header">
-        <span class="ll-original">${escHtml(original)}</span>
-        <span class="ll-arrow">→</span>
         <span class="ll-translation">${escHtml(translation)}</span>
         <button id="ll-play" class="ll-play-btn" title="Pronounce">🔊</button>
+        <span class="ll-lang-badge">${langLabel}</span>
       </div>
       ${contextSnip}
       <div class="ll-quiz-label">💡 What do you think it means?</div>
@@ -83,20 +87,16 @@ export function buildTooltip(
   const guessInput = tip.querySelector<HTMLInputElement>('#ll-guess')!;
   guessInput?.focus();
 
-  const showFeedback = (correct: boolean, revealedTranslation?: string) => {
+  const showFeedback = (correct: boolean) => {
     const fb = tip.querySelector<HTMLElement>('#ll-feedback')!;
+    const correctAnswer = tryOutMode ? translation : original;
+
     if (correct) {
       fb.innerHTML = `<span class="ll-correct">✅ Correct! +15 🪙</span>`;
       chrome.runtime.sendMessage({ type: 'ADD_CREDITS', uid, amount: 15 });
-      if (tryOutMode && revealedTranslation) {
-        fb.innerHTML += `<br><span class="ll-reveal">${escHtml(revealedTranslation)}</span>`;
-      }
     } else {
-      fb.innerHTML = `<span class="ll-wrong">❌ Not quite. +2 🪙</span>`;
+      fb.innerHTML = `<span class="ll-wrong">❌ Not quite. +2 🪙</span><br><span class="ll-reveal">The answer is: <strong>${escHtml(correctAnswer)}</strong></span>`;
       chrome.runtime.sendMessage({ type: 'ADD_CREDITS', uid, amount: 2 });
-      if (revealedTranslation) {
-        fb.innerHTML += `<br><span class="ll-reveal">${escHtml(revealedTranslation)}</span>`;
-      }
     }
   };
 
@@ -106,8 +106,8 @@ export function buildTooltip(
     const fb = tip.querySelector<HTMLElement>('#ll-feedback')!;
     fb.innerHTML = '<span class="ll-checking">Checking…</span>';
     
-    chrome.runtime.sendMessage({ type: 'CHECK_GUESS', word: original, guess }, (correct) => {
-      showFeedback(correct, translation);
+    chrome.runtime.sendMessage({ type: 'CHECK_GUESS', word: original, guess, lang }, (correct) => {
+      showFeedback(correct);
     });
   };
 
@@ -123,7 +123,8 @@ export function buildTooltip(
   tip.querySelector('#ll-skip')?.addEventListener('click', (e) => {
     e.stopPropagation();
     chrome.runtime.sendMessage({ type: 'ADD_CREDITS', uid, amount: 1 });
-    removeTip();
+    const fb = tip.querySelector<HTMLElement>('#ll-feedback')!;
+    fb.innerHTML = `<span class="ll-reveal">The answer is: <strong>${escHtml(tryOutMode ? translation : original)}</strong></span>`;
   });
 
   // Lazy definition (normal mode only)

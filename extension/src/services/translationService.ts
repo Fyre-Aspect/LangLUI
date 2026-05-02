@@ -88,8 +88,16 @@ export async function translateWords(
   }
 }
 
-export async function checkGuess(original: string, guess: string): Promise<boolean> {
-  const prompt = `Is "${guess}" a reasonably correct translation or meaning for the English word "${original}"? Reply with ONLY "YES" or "NO".`;
+export async function checkGuess(original: string, guess: string, lang?: string): Promise<boolean> {
+  const lowerOriginal = original.toLowerCase().trim();
+  const lowerGuess = guess.toLowerCase().trim();
+  
+  // 1. Simple direct match check (handles English guesses in Normal mode or exact matches)
+  if (lowerGuess === lowerOriginal) return true;
+
+  const langName = lang ? (LANG_NAMES[lang] || lang) : 'the target language';
+  const prompt = `The target English word is "${original}". The user is learning ${langName} and guessed "${guess}". Is this guess a correct translation in ${langName}, or a valid synonym/meaning in English? Reply ONLY "YES" or "NO".`;
+  
   try {
     const resp = await fetch(FLASH, {
       method: 'POST',
@@ -102,14 +110,16 @@ export async function checkGuess(original: string, guess: string): Promise<boole
     const data = await resp.json();
     const text = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim().toUpperCase() || '';
     return text.includes('YES');
-  } catch {
+  } catch (error) {
+    console.error('[LangLua] checkGuess error:', error);
     return false;
   }
 }
 
 export async function getDefinition(original: string, context?: string): Promise<string> {
-  const ctxPart = context ? ` used in the context: "${context}"` : '';
-  const prompt = `Give a very short, 1-sentence definition for the English word "${original}"${ctxPart}.`;
+  const ctxPart = context ? ` used in the sentence: "${context}"` : '';
+  const prompt = `Provide a very brief, one-sentence definition for the English word "${original}"${ctxPart}. Do not use markdown. Just the text.`;
+  
   try {
     const resp = await fetch(FLASH, {
       method: 'POST',
@@ -120,8 +130,12 @@ export async function getDefinition(original: string, context?: string): Promise
       }),
     });
     const data = await resp.json();
-    return data.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || 'No definition found.';
-  } catch {
-    return 'Error loading definition.';
+    let def = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || 'No definition found.';
+    // Clean any markdown backticks if Gemini ignored the instruction
+    def = def.replace(/[*_`]/g, '');
+    return def;
+  } catch (error) {
+    console.error('[LangLua] getDefinition error:', error);
+    return 'Error loading definition. Please try again.';
   }
 }

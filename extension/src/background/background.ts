@@ -36,7 +36,7 @@ chrome.runtime.onMessage.addListener((request: any, sender: any, sendResponse: a
   }
 
   if (request.type === "CHECK_GUESS") {
-    checkGuess(request.word, request.guess).then(sendResponse);
+    checkGuess(request.word, request.guess, request.lang).then(sendResponse);
     return true;
   }
 });
