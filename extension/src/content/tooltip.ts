@@ -53,7 +53,8 @@ export const createTooltip = (word: string, translation: string, uid: string) =>
     text.innerText = 'Loading...';
     try {
       const def = await getDefinition(word);
-      text.innerText = def;
+      text.innerHTML = `<div>${def}</div><div style="font-size:10px; color:#4caf50; margin-top:4px;">Defined! +1 🪙</div>`;
+      chrome.runtime.sendMessage({ type: "ADD_CREDITS", uid, amount: 1 });
     } catch(e) {
       text.innerText = 'Failed to load.';
     }

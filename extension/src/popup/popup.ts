@@ -42,11 +42,9 @@ document.addEventListener("DOMContentLoaded", async () => {
       const snap = await getDoc(doc(db, "users", storageObj.uid));
       if (snap.exists()) {
         const data = snap.data();
-        const lang = data.targetLanguage ?? "ja";
+        const lang = data.targetLanguage ?? "es";
         const langNames: Record<string, string> = {
-          ja: "🇯🇵 Japanese", es: "🇪🇸 Spanish", fr: "🇫🇷 French",
-          de: "🇩🇪 German",  ko: "🇰🇷 Korean",  pt: "🇧🇷 Portuguese",
-          it: "🇮🇹 Italian", zh: "🇨🇳 Chinese",  ar: "🇸🇦 Arabic", hi: "🇮🇳 Hindi",
+          es: "🇪🇸 Spanish", fr: "🇫🇷 French", hi: "🇮🇳 Hindi",
         };
         if (langLbl)      langLbl.textContent      = langNames[lang] ?? lang.toUpperCase();
         if (intensityLbl) intensityLbl.textContent  = String(data.intensity ?? 5);
@@ -62,13 +60,14 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 
   document.getElementById("btn-login")?.addEventListener("click", () => {
-    chrome.identity.getAuthToken({ interactive: true }, async (token) => {
-      if (chrome.runtime.lastError || !token) {
+    chrome.identity.getAuthToken({ interactive: true }, async (token: any) => {
+      const tokenStr = typeof token === 'string' ? token : token?.token;
+      if (chrome.runtime.lastError || !tokenStr) {
         console.error("Sign-in failed", chrome.runtime.lastError);
         return;
       }
       try {
-        const credential = GoogleAuthProvider.credential(null, token);
+        const credential = GoogleAuthProvider.credential(null, tokenStr);
         const result = await signInWithCredential(auth, credential);
         await new Promise<void>((resolve) =>
           chrome.storage.local.set({ uid: result.user.uid }, resolve)

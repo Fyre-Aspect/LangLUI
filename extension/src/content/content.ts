@@ -28,7 +28,7 @@ const init = async () => {
         const text = node.nodeValue;
         if (!text) return;
 
-        const regex = new RegExp(`\\\\b${word}\\\\b`, 'gi');
+        const regex = new RegExp(`\\b${word}\\b`, 'gi');
         if (!regex.test(text)) return;
 
         const span = document.createElement('span');
@@ -52,7 +52,6 @@ const init = async () => {
               const rect = clone.getBoundingClientRect();
               const tooltip = createTooltip(word, translation, uid);
               positionTooltip(tooltip, rect);
-              chrome.runtime.sendMessage({ type: "ADD_CREDITS", uid, amount: 1 });
             });
             parent.insertBefore(clone, node);
           }
