@@ -1,0 +1,55 @@
+.langlua-word {
+  background: rgba(108, 99, 255, 0.15) !important;
+  border-bottom: 2px dashed #A89BFF !important;
+  border-radius: 3px !important;
+  padding: 0 2px !important;
+  cursor: pointer !important;
+  transition: background 150ms ease !important;
+  font-family: inherit !important;
+  font-size: inherit !important;
+  color: inherit !important;
+}
+.langlua-word:hover {
+  background: rgba(108, 99, 255, 0.3) !important;
+}
+.langlua-tooltip {
+  position: absolute !important;
+  z-index: 2147483647 !important;
+  background: #1A1A2E !important;
+  border: 1px solid #6C63FF !important;
+  border-radius: 12px !important;
+  padding: 16px !important;
+  max-width: 320px !important;
+  box-shadow: 0 8px 40px rgba(108,99,255,0.25) !important;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif !important;
+  color: #F0EEFF !important;
+  font-size: 14px !important;
+}
+.langlua-tooltip * {
+  box-sizing: border-box !important;
+}
+.langlua-tooltip hr {
+  border: none !important;
+  border-top: 1px solid #3a3a5e !important;
+  margin: 12px 0 !important;
+}
+.langlua-tooltip-btn {
+  background: #6C63FF !important;
+  color: white !important;
+  border: none !important;
+  padding: 6px 12px !important;
+  border-radius: 6px !important;
+  cursor: pointer !important;
+  font-size: 13px !important;
+  font-weight: bold !important;
+  margin-top: 4px !important;
+}
+.langlua-tooltip-input {
+  width: 100% !important;
+  padding: 6px !important;
+  border-radius: 4px !important;
+  border: 1px solid #6C63FF !important;
+  background: #2a2a4e !important;
+  color: white !important;
+  margin-bottom: 8px !important;
+}

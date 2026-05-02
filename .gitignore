@@ -1,0 +1,13 @@
+node_modules/
+dist/
+.next/
+out/
+build/
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+.eslintcache
+*.log
+.DS_Store
