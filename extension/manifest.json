@@ -14,5 +14,12 @@
   }],
   "action": {
     "default_popup": "popup.html"
+  },
+  "oauth2": {
+    "client_id": "235691276014-6upvjrs1pf6c5sdml3h9281n3bejuiis.apps.googleusercontent.com",
+    "scopes": [
+      "https://www.googleapis.com/auth/userinfo.email",
+      "https://www.googleapis.com/auth/userinfo.profile"
+    ]
   }
 }
