@@ -128,7 +128,7 @@ export function buildTooltip(
     const proficiencyLevel = 5; // Default mid-level
     buildSaveWordModal(original, translation, lang, proficiencyLevel, () => {
       chrome.storage.local.get(['savedWords'], (result) => {
-        const savedWords = result.savedWords || {};
+        const savedWords = (result.savedWords || {}) as Record<string, any[]>;
         if (!savedWords[lang]) savedWords[lang] = [];
         savedWords[lang].push({ word: original, translation, context, savedAt: Date.now() });
         chrome.storage.local.set({ savedWords });
