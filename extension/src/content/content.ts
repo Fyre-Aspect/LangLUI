@@ -96,10 +96,18 @@ const init = async () => {
         span.dataset.translation = translation;
         span.innerText = translation;
 
-        span.addEventListener('mouseenter', () => {
+        const show = (e: MouseEvent) => {
+          console.log('[LangLua] Hover/Click on:', matchedWord);
           const rect = span.getBoundingClientRect();
           const tooltip = createTooltip(lowerWord, translation, uid);
           positionTooltip(tooltip, rect);
+          console.log('[LangLua] Tooltip positioned at:', tooltip.style.left, tooltip.style.top);
+        };
+
+        span.addEventListener('mouseenter', show);
+        span.addEventListener('click', (e) => {
+          e.stopPropagation();
+          show(e);
         });
 
         fragment.appendChild(span);
@@ -119,6 +127,11 @@ const init = async () => {
     });
 
     console.log('[LangLua] done. Total words replaced on page:', replacedCount);
+    if (replacedCount > 0) {
+      console.log('[LangLua] SUCCESS: You should see highlighted words on the page. Hover or click them to see the tooltip.');
+    } else {
+      console.log('[LangLua] WARNING: No words were replaced. Check if translations were received or if words matched the page text.');
+    }
 
     document.addEventListener('click', (e) => {
       const target = e.target as HTMLElement;

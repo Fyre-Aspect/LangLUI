@@ -20,8 +20,8 @@
 
 /* Tooltip container — resets ALL host-page styles */
 .langlua-tooltip {
-  all: initial !important;
-  position: fixed !important;
+  all: initial;
+  position: absolute !important;
   z-index: 2147483647 !important;
   background: #1A1A2E !important;
   border: 1px solid #6C63FF !important;
@@ -35,7 +35,9 @@
   color: #F0EEFF !important;
   line-height: 1.5 !important;
   box-sizing: border-box !important;
-  display: block !important;
+  display: none;
+  visibility: visible !important;
+  opacity: 1 !important;
 }
 
 /* Pronunciation button */

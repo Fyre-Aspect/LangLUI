@@ -49,7 +49,7 @@ export const translateWords = async (words: string[], targetLanguage: string): P
   console.log(`[LangLua] Calling Gemini for ${uncached.length} uncached words`);
 
   const ai = new GoogleGenAI({ apiKey: GEMINI_API_KEY });
-  const prompt = `Translate the following English words into ${targetLanguage}. Return ONLY a valid JSON object with no markdown or explanation. Format: { "word": "translation" }. Words: ${JSON.stringify(uncached)}`;
+  const prompt = `Translate to ${targetLanguage} as JSON {word:translation}: ${JSON.stringify(uncached)}`;
 
   try {
     const response = await ai.models.generateContent({
