@@ -1,3 +1,4 @@
+export {};
 const DEFAULT_PREFS = { targetLanguage: "ja", intensity: 5 };
 
 chrome.runtime.onMessage.addListener((request: any, sender: any, sendResponse: any) => {
