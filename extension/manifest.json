@@ -3,7 +3,7 @@
   "name": "LangLua",
   "version": "1.0.0",
   "description": "Learn languages by living the web.",
-  "permissions": ["storage", "activeTab", "scripting", "identity"],
+  "permissions": ["storage", "activeTab", "scripting", "identity", "tabs"],
   "host_permissions": ["<all_urls>"],
   "background": { "service_worker": "background.js" },
   "content_scripts": [{
