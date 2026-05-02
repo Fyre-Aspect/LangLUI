@@ -117,7 +117,22 @@ document.addEventListener("DOMContentLoaded", async () => {
       });
     }
 
-    if (intensityLbl) intensityLbl.textContent = String(data.intensity ?? DEFAULT_PREFS.intensity);
+    const intensitySlider = document.getElementById("intensity-slider") as HTMLInputElement;
+    if (intensitySlider) {
+      intensitySlider.value = String(data.intensity ?? DEFAULT_PREFS.intensity);
+      if (intensityLbl) intensityLbl.textContent = intensitySlider.value;
+      
+      intensitySlider.addEventListener("input", (e) => {
+        const val = (e.target as HTMLInputElement).value;
+        if (intensityLbl) intensityLbl.textContent = val;
+      });
+
+      intensitySlider.addEventListener("change", async (e) => {
+        const val = Number((e.target as HTMLInputElement).value);
+        await chrome.storage.local.set({ intensity: val });
+        await reloadActiveTab();
+      });
+    }
     if (creditsVal) creditsVal.textContent = String(data.credits ?? DEFAULT_STATS.credits);
     if (streakVal) streakVal.textContent = `${data.streak ?? DEFAULT_STATS.streak} days`;
   } else {
