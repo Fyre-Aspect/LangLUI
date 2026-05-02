@@ -1,23 +1,12 @@
 import { selectWords } from '../utils/wordSelector';
-import { translateWords } from '../services/translationService';
-import { buildTooltip, removeTip } from './tooltip';
+import { createTooltip, positionTooltip, hideTooltip } from './tooltip';
 
-// ── Module-level in-memory caches (zero-latency hover access)
-const transMap   = new Map<string, string>(); // word → translation
-const contextMap = new Map<string, string>(); // word → sentence context
-
-let uid        = '';
-let lang       = 'ja';
-let intensity  = 5;
-let tryOutMode = false;
-let scanDone   = false;
-
-// ── INIT ──────────────────────────────────────────────────────────────────────
-async function init() {
+const init = async () => {
   try {
-    const store = await chrome.storage.local.get([
-      'uid', 'isActive', 'targetLanguage', 'intensity', 'tryOutMode',
-    ]) as Record<string, any>;
+    console.log('[LangLua] content script init started');
+
+    const storageObj = await chrome.storage.local.get(['uid', 'isActive']) as { uid: string, isActive?: boolean };
+    console.log('[LangLua] storage:', JSON.stringify(storageObj));
 
     uid = store.uid ?? '';
     if (!uid)                        { console.log('[LangLua] not signed in'); return; }
@@ -27,51 +16,45 @@ async function init() {
     intensity  = store.intensity      ?? 5;
     tryOutMode = store.tryOutMode     ?? false;
 
-    console.log(`[LangLua] init lang=${lang} intensity=${intensity} tryOut=${tryOutMode}`);
-    await runScan();
-    watchMutations();
-  } catch (err) {
-    console.error('[LangLua] init error:', err);
-  }
-}
+    console.log('[LangLua] prefs response:', JSON.stringify(response));
 
-// ── SCAN ──────────────────────────────────────────────────────────────────────
-async function runScan() {
-  const { words, nodeMap, contextFor } = selectWords(intensity);
-  if (!words.length) { console.log('[LangLua] no words selected'); return; }
-
-  // Store sentence contexts
-  for (const [word, ctx] of Object.entries(contextFor)) {
-    contextMap.set(word, ctx);
-  }
-
-  // Translate all — reads from local dict + chrome.storage batch + Flash API
-  const translations = await translateWords(words, lang);
-  for (const [w, t] of Object.entries(translations)) {
-    transMap.set(w, t);
-  }
-
-  // Replace in DOM
-  let count = 0;
-  for (const [word, translation] of transMap) {
-    const nodes = nodeMap.get(word);
-    if (!nodes) continue;
-    for (const node of nodes) {
-      if (!node.parentNode) continue;
-      replaceInNode(node, word, translation);
-      count++;
+    const prefs = response as { targetLanguage: string; intensity: number; error?: string };
+    if (!response || prefs.error || !prefs.targetLanguage) {
+      console.log('[LangLua] Bad prefs, aborting:', prefs);
+      return;
     }
-  }
 
-  console.log(`[LangLua] replaced ${count} instances across ${transMap.size} words`);
-  scanDone = true;
-}
+    const { words, wordNodes } = selectWords(prefs.intensity);
+    console.log('[LangLua] selected words count:', words.length, words.slice(0, 10));
 
-// ── DOM REPLACE ───────────────────────────────────────────────────────────────
-function replaceInNode(node: Text, word: string, translation: string) {
-  const text    = node.nodeValue ?? '';
-  const parent  = node.parentNode;
-  if (!text || !parent) return;
+    if (words.length === 0) {
+      console.log('[LangLua] No words selected, aborting.');
+      return;
+    }
+
+    const rawTranslations = await new Promise<Record<string, string>>((resolve) => {
+      chrome.runtime.sendMessage({ type: "TRANSLATE_WORDS", words, targetLanguage: prefs.targetLanguage }, resolve);
+    });
+
+    const translations: Record<string, string> = {};
+    if (rawTranslations) {
+      for (const [k, v] of Object.entries(rawTranslations)) {
+        translations[k.toLowerCase()] = v;
+      }
+    }
+
+    // Get unique Text nodes that we found words in
+    const uniqueNodes = new Set<Text>();
+    wordNodes.forEach(nodes => nodes.forEach(n => uniqueNodes.add(n)));
+    console.log('[LangLua] unique text nodes to process:', uniqueNodes.size);
+
+    let replacedCount = 0;
+
+    // Iterate through all actual nodes
+    uniqueNodes.forEach(node => {
+      const text = node.nodeValue;
+      const parent = node.parentNode;
+      if (!text || !parent) return;
 
   const regex   = new RegExp(`\\b${word}\\b`, 'gi');
   const matches = [...text.matchAll(regex)];
