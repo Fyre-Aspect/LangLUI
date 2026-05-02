@@ -17,7 +17,7 @@ export function createSidebar(
 
   const title = document.createElement('div');
   title.className = 'll-sidebar-title';
-  title.innerHTML = `<span>Try Out Mode</span><span class="ll-sidebar-badge">${lang.toUpperCase()}</span>`;
+  title.innerHTML = `<span>Practice Mode</span><span class="ll-sidebar-badge">${lang.toUpperCase()}</span>`;
   sidebar.appendChild(title);
 
   const list = document.createElement('div');
@@ -67,7 +67,7 @@ export function createSidebar(
         feedback.textContent = 'Checking...';
         feedback.className = 'll-sidebar-feedback checking';
 
-        chrome.runtime.sendMessage({ type: 'CHECK_GUESS', word, guess, lang }, (correct) => {
+        chrome.runtime.sendMessage({ type: 'CHECK_GUESS', word, guess, lang, expected: translation }, (correct) => {
           if (correct) {
             feedback.textContent = '✅ Correct! +15 🪙';
             feedback.className = 'll-sidebar-feedback correct';

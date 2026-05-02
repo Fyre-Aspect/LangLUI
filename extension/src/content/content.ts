@@ -4,7 +4,7 @@ import { createSidebar } from './sidebar';
 
 let currentLang = 'ja';
 let currentIntensity = 5;
-let isTryOut = false;
+let isPractice = false;
 let userUid = '';
 let globalTranslations: Record<string, string> = {};
 let globalContext: Record<string, string> = {};
@@ -16,7 +16,7 @@ let mutationTimeout: ReturnType<typeof setTimeout> | null = null;
 const processNode = (node: Text, translations: Record<string, string>, contextMap: Record<string, string>) => {
   const text = node.nodeValue;
   const parent = node.parentNode as HTMLElement;
-  if (!text || !parent || parent.closest('.langlua-tooltip') || parent.closest('.ll-sidebar') || parent.classList.contains('langlua-word') || parent.classList.contains('langlua-tryout')) return;
+  if (!text || !parent || parent.closest('.langlua-tooltip') || parent.closest('.ll-sidebar') || parent.classList.contains('langlua-word') || parent.classList.contains('langlua-practice')) return;
 
   const wordsInNode = Object.keys(translations).filter(w => {
     const pattern = `(?<=^|[^a-zÀ-ÿ])${w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(?=[^a-zÀ-ÿ]|$)`;
@@ -43,8 +43,8 @@ const processNode = (node: Text, translations: Record<string, string>, contextMa
     const span = document.createElement('span');
     const wordContext = contextMap[lowerWord] || '';
 
-    if (isTryOut) {
-      span.className = 'langlua-tryout';
+    if (isPractice) {
+      span.className = 'langlua-practice';
       span.textContent = matchedWord;
       span.addEventListener('click', (e) => {
         e.stopPropagation();
@@ -118,8 +118,8 @@ const handleNewContent = async (roots: HTMLElement[]) => {
     });
     globalTranslations = { ...globalTranslations, ...newTranslations };
     
-    // Update sidebar if in Try Out mode
-    if (isTryOut) {
+    // Update sidebar if in Practice mode
+    if (isPractice) {
       createSidebar(globalWords, globalTranslations, globalContext, currentLang, userUid);
     }
   }
@@ -138,19 +138,19 @@ const handleNewContent = async (roots: HTMLElement[]) => {
 
 const init = async () => {
   try {
-    const store = await chrome.storage.local.get(['uid', 'isActive', 'targetLanguage', 'intensity', 'tryOutMode']);
+    const store = await chrome.storage.local.get(['uid', 'isActive', 'targetLanguage', 'intensity', 'practiceMode']);
     userUid = (store.uid as string) || 'local-user';
     if (store.isActive === false) return;
 
     currentLang = (store.targetLanguage as string) || 'ja';
     currentIntensity = (store.intensity as number) || 5;
-    isTryOut = (store.tryOutMode as boolean) || false;
+    isPractice = (store.practiceMode as boolean) || false;
 
     // Initial pass
     await handleNewContent([document.body]);
 
-    // Initialize sidebar even if no words found yet in Try Out mode
-    if (isTryOut) {
+    // Initialize sidebar even if no words found yet in Practice mode
+    if (isPractice) {
       createSidebar(globalWords, globalTranslations, globalContext, currentLang, userUid);
     }
 
@@ -178,13 +178,13 @@ const init = async () => {
 
     document.addEventListener('click', (e) => {
       const target = e.target as HTMLElement;
-      if (!target.closest('.langlua-tooltip') && !target.closest('.langlua-word') && !target.closest('.langlua-tryout') && !target.closest('.ll-sidebar')) {
+      if (!target.closest('.langlua-tooltip') && !target.closest('.langlua-word') && !target.closest('.langlua-practice') && !target.closest('.ll-sidebar')) {
         hideTooltip();
       }
     });
 
     chrome.runtime.onMessage.addListener((msg) => {
-      if (msg.type === 'TOGGLE_TRYOUT') {
+      if (msg.type === 'TOGGLE_PRACTICE') {
         window.location.reload();
       }
     });

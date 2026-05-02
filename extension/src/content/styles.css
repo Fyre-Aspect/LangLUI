@@ -20,8 +20,8 @@
   color: #1d4ed8 !important;
 }
 
-/* ── Try Out mode — keeps original English, dotted sky-blue underline ─────── */
-.langlua-tryout {
+/* ── Practice mode — keeps original English, dotted sky-blue underline ─────── */
+.langlua-practice {
   border-bottom: 2px dashed rgba(59, 130, 246, 0.45) !important;
   cursor: pointer !important;
   background: none !important;
@@ -34,11 +34,11 @@
   transition: border-color 120ms ease !important;
 }
 
-.langlua-tryout:hover {
+.langlua-practice:hover {
   border-bottom-color: #2563eb !important;
 }
 
-.langlua-tryout:hover {
+.langlua-practice:hover {
   border-bottom-color: rgba(108, 99, 255, 0.8) !important;
 }
 
@@ -154,7 +154,7 @@
   display: block !important;
 }
 
-/* ── Quiz / Try Out label ────────────────────────────────────────────────── */
+/* ── Quiz / Practice label ────────────────────────────────────────────────── */
 .ll-quiz-label {
   font-size: 11px !important;
   color: #94a3b8 !important;
@@ -649,7 +649,7 @@
   }
 }
 
-/* ── Sidebar (Try Out Mode) ─────────────────────────────────────────────── */
+/* ── Sidebar (Practice Mode) ─────────────────────────────────────────────── */
 .ll-sidebar {
   all: initial;
   position: fixed !important;

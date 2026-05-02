@@ -1,5 +1,8 @@
 import { COMMON_TRANSLATIONS } from '../utils/wordSelector';
 
+declare const GEMINI_API_KEY: string;
+const FLASH = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`;
+
 const LANG_NAMES: Record<string, string> = {
   ja: 'Japanese', es: 'Spanish', fr: 'French', de: 'German',
   ko: 'Korean', pt: 'Portuguese', it: 'Italian', zh: 'Chinese',
@@ -98,11 +101,38 @@ export async function translateWords(
   return result;
 }
 
-// Fallback to Gemini for smarter checks if needed, but for now we'll keep it simple
-export async function checkGuess(original: string, guess: string, lang?: string): Promise<boolean> {
+export async function checkGuess(original: string, guess: string, lang?: string, expected?: string): Promise<boolean> {
   const lowerOriginal = original.toLowerCase().trim();
   const lowerGuess = guess.toLowerCase().trim();
-  return lowerOriginal === lowerGuess;
+  const lowerExpected = expected?.toLowerCase().trim();
+
+  // 1. If guess matches the English word (for tooltip mode), it's correct
+  if (lowerGuess === lowerOriginal) return true;
+  
+  // 2. If guess matches the known translation, it's correct
+  if (lowerExpected && lowerGuess === lowerExpected) return true;
+
+  // 3. Fallback to Gemini for synonyms or different forms
+  const langName = lang ? (LANG_NAMES[lang] || lang) : 'the target language';
+  const prompt = `The target word is "${original}" (English) which translates to "${expected || 'unknown'}" in ${langName}. The user guessed "${guess}". Is this guess a correct translation in ${langName}, or a valid synonym/meaning in English for "${original}"? Reply ONLY "YES" or "NO".`;
+  
+  try {
+    const resp = await fetch(FLASH, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: prompt }] }],
+        generationConfig: { temperature: 0, maxOutputTokens: 10 },
+      }),
+    });
+    const data = await resp.json();
+    const text = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim().toUpperCase() || '';
+    console.log(`[LangLua] checkGuess for "${original}": guess="${guess}", expected="${expected}", result="${text}"`);
+    return text.includes('YES');
+  } catch (error) {
+    console.error('[LangLua] checkGuess error:', error);
+    return false;
+  }
 }
 
 export async function getDefinition(original: string, context?: string): Promise<string> {

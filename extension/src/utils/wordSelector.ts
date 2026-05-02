@@ -28,7 +28,8 @@ export const selectWords = (intensity: number, root: HTMLElement | Document = do
       if (['SCRIPT', 'STYLE', 'NOSCRIPT', 'IFRAME', 'SVG', 'CANVAS'].includes(tag)) {
         return NodeFilter.FILTER_REJECT;
       }
-      if (parent.classList?.contains('langlua-word') || parent.classList?.contains('langlua-tryout')) {
+      // Skip already-replaced spans
+      if (parent.classList?.contains('langlua-word') || parent.classList?.contains('langlua-practice')) {
         return NodeFilter.FILTER_REJECT;
       }
       return NodeFilter.FILTER_ACCEPT;
