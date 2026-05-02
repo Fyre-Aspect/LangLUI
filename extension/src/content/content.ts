@@ -8,6 +8,10 @@ let isTryOut = false;
 let userUid = '';
 let globalTranslations: Record<string, string> = {};
 let globalContext: Record<string, string> = {};
+let globalWords: string[] = [];
+
+let pendingMutationNodes: HTMLElement[] = [];
+let mutationTimeout: ReturnType<typeof setTimeout> | null = null;
 
 const processNode = (node: Text, translations: Record<string, string>, contextMap: Record<string, string>) => {
   const text = node.nodeValue;
@@ -43,14 +47,13 @@ const processNode = (node: Text, translations: Record<string, string>, contextMa
       span.textContent = matchedWord;
       span.addEventListener('click', (e) => {
         e.stopPropagation();
-        // Try to find in sidebar if in try-out mode
         const sidebarItem = Array.from(document.querySelectorAll('.ll-sidebar-item'))
           .find(item => item.querySelector('.ll-sidebar-word')?.textContent?.toLowerCase().includes(lowerWord));
         if (sidebarItem) {
           sidebarItem.scrollIntoView({ behavior: 'smooth', block: 'center' });
           (sidebarItem as HTMLElement).click();
         } else {
-          buildTooltip(span, matchedWord, translation, currentLang, wordContext, true, userUid);
+          buildTooltip(span, matchedWord, translation, currentLang, wordContext, userUid);
         }
       });
     } else {
@@ -58,7 +61,7 @@ const processNode = (node: Text, translations: Record<string, string>, contextMa
       span.textContent = translation;
       const show = (e: Event) => {
         e.stopPropagation();
-        buildTooltip(span, matchedWord, translation, currentLang, wordContext, false, userUid);
+        buildTooltip(span, matchedWord, translation, currentLang, wordContext, userUid);
       };
       span.addEventListener('mouseenter', show);
       span.addEventListener('click', show);
@@ -74,6 +77,61 @@ const processNode = (node: Text, translations: Record<string, string>, contextMa
   }
 };
 
+const handleNewContent = async (roots: HTMLElement[]) => {
+  if (roots.length === 0) return;
+
+  const newlyFoundWords: string[] = [];
+  const allNodeMaps: Map<string, Text[]>[] = [];
+  
+  for (const root of roots) {
+    const { words, nodeMap, contextFor } = selectWords(currentIntensity, root);
+    
+    // Track overall words for sidebar
+    words.forEach(w => {
+      if (!globalWords.includes(w)) {
+        globalWords.push(w);
+      }
+    });
+
+    // Find words that need new translations
+    const wordsToTranslate = words.filter(w => !globalTranslations[w]);
+    if (wordsToTranslate.length > 0) {
+      newlyFoundWords.push(...wordsToTranslate);
+    }
+    
+    allNodeMaps.push(nodeMap);
+    globalContext = { ...globalContext, ...contextFor };
+  }
+
+  if (newlyFoundWords.length > 0) {
+    const uniqueNewWords = Array.from(new Set(newlyFoundWords));
+    const newTranslations = await new Promise<Record<string, string>>((resolve) => {
+      chrome.runtime.sendMessage({ 
+        type: "TRANSLATE_WORDS", 
+        words: uniqueNewWords, 
+        targetLanguage: currentLang 
+      }, (resp) => resolve(resp || {}));
+    });
+    globalTranslations = { ...globalTranslations, ...newTranslations };
+    
+    // Update sidebar if in Try Out mode
+    if (isTryOut) {
+      createSidebar(globalWords, globalTranslations, globalContext, currentLang, userUid);
+    }
+  }
+
+  // Apply translations to all identified nodes
+  for (const nodeMap of allNodeMaps) {
+    const uniqueNodes = new Set<Text>();
+    nodeMap.forEach(nodes => nodes.forEach(n => uniqueNodes.add(n)));
+    uniqueNodes.forEach(node => {
+      if (node.parentNode) {
+        processNode(node, globalTranslations, globalContext);
+      }
+    });
+  }
+};
+
 const init = async () => {
   try {
     const store = await chrome.storage.local.get(['uid', 'isActive', 'targetLanguage', 'intensity', 'tryOutMode']);
@@ -84,45 +142,31 @@ const init = async () => {
     currentIntensity = (store.intensity as number) || 5;
     isTryOut = (store.tryOutMode as boolean) || false;
 
-    const { words, nodeMap, contextFor } = selectWords(currentIntensity);
-    if (words.length === 0) return;
-
-    globalContext = { ...globalContext, ...contextFor };
-
-    const translations = await new Promise<Record<string, string>>((resolve) => {
-      chrome.runtime.sendMessage({ 
-        type: "TRANSLATE_WORDS", 
-        words: Array.from(new Set(words)), 
-        targetLanguage: currentLang 
-      }, (resp) => resolve(resp || {}));
-    });
-
-    if (!translations || Object.keys(translations).length === 0) return;
-    globalTranslations = { ...globalTranslations, ...translations };
-
-    if (isTryOut) {
-      createSidebar(words, globalTranslations, contextFor, currentLang, userUid);
-    }
-
     // Initial pass
-    const uniqueNodes = new Set<Text>();
-    nodeMap.forEach(nodes => nodes.forEach(n => uniqueNodes.add(n)));
-    uniqueNodes.forEach(node => processNode(node, globalTranslations, globalContext));
+    await handleNewContent([document.body]);
+
+    // Initialize sidebar even if no words found yet in Try Out mode
+    if (isTryOut) {
+      createSidebar(globalWords, globalTranslations, globalContext, currentLang, userUid);
+    }
 
     // Watch for dynamic content
     const observer = new MutationObserver((mutations) => {
-      for (const mutation of mutations) {
-        mutation.addedNodes.forEach(node => {
-          if (node.nodeType === Node.TEXT_NODE) {
-            processNode(node as Text, globalTranslations, globalContext);
-          } else if (node.nodeType === Node.ELEMENT_NODE) {
-            const walker = document.createTreeWalker(node, NodeFilter.SHOW_TEXT);
-            let textNode;
-            while (textNode = walker.nextNode()) {
-              processNode(textNode as Text, globalTranslations, globalContext);
-            }
+      mutations.forEach(m => {
+        m.addedNodes.forEach(node => {
+          if (node instanceof HTMLElement) {
+            pendingMutationNodes.push(node);
           }
         });
+      });
+
+      if (pendingMutationNodes.length > 0) {
+        if (mutationTimeout) clearTimeout(mutationTimeout);
+        mutationTimeout = setTimeout(() => {
+          const roots = [...pendingMutationNodes];
+          pendingMutationNodes = [];
+          handleNewContent(roots);
+        }, 1000);
       }
     });
 

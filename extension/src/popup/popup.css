@@ -1,35 +1,44 @@
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-html, body {
-  width: 360px; /* Slightly wider to accommodate rounding room */
+html {
+  width: 380px; /* Wider window to allow shadow and rounding to show */
+  height: auto;
+  background: transparent !important;
   margin: 0;
   padding: 0;
-  background: transparent;
-  overflow: hidden;
 }
 
 body {
+  width: 380px;
+  margin: 0;
+  padding: 20px; /* Crucial: room for the curves to exist! */
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
   color: #1E293B;
-  background: transparent; /* Keep outer area invisible */
-  padding: 10px; /* Space for rounding and shadow */
+  background: transparent !important;
   display: flex;
   justify-content: center;
+  align-items: center;
 }
-
-/* ══════════════════════════════════════
-   CARD (no border glow)
-   ══════════════════════════════════════ */
 
 .border-glow-card {
   position: relative;
   width: 340px;
-  border-radius: 48px; /* Extreme rounding as requested */
+  border-radius: 48px; /* High rounding as requested */
   background: #FFFFFF;
-  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15); /* Soft shadow to define the shape */
   z-index: 0;
   overflow: hidden;
-  border: 1px solid #E2E8F0;
+  border: none !important;
+}
+
+.settings-row {
+  padding: 10px 24px; /* Increased horizontal padding */
+  border-bottom: 1px solid #E2E8F0;
+}
+
+.settings-row {
+  padding: 10px 24px; /* Increased horizontal padding */
+  border-bottom: 1px solid #E2E8F0;
 }
 
 /* Remove old animated gradient border */

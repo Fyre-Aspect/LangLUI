@@ -62,8 +62,8 @@ export function getSentenceContext(node: Text, word: string): string {
   return text.slice(start, end).trim();
 }
 
-export const selectWords = (intensity: number): WordMap => {
-  const walk = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, {
+export const selectWords = (intensity: number, root: HTMLElement | Document = document): WordMap => {
+  const walk = document.createTreeWalker(root instanceof Document ? root.body : root, NodeFilter.SHOW_TEXT, {
     acceptNode(node) {
       const parent = node.parentElement;
       if (!parent) return NodeFilter.FILTER_REJECT;
@@ -97,10 +97,17 @@ export const selectWords = (intensity: number): WordMap => {
       // Only skip the most absolute basic glue words
       if (!/^[a-zA-Z]{2,30}$/.test(word) || stopwords.has(lower)) continue;
 
-      // Extreme scaling: 1 maps to 10%, 10 maps to 100%
-      const prob = (intensity * 0.10); 
+      // Deterministic selection based on the word itself
+      // This ensures consistency across websites and refreshes
+      const hashCode = lower.split('').reduce((a, b) => {
+        a = ((a << 5) - a) + b.charCodeAt(0);
+        return a & a;
+      }, 0);
+      const wordScore = Math.abs(hashCode) % 100;
+      
+      const threshold = intensity * 10;
 
-      if (Math.random() < prob) {
+      if (wordScore < threshold) {
         wordsSet.add(lower);
         const nodes = nodeMap.get(lower) ?? [];
         nodes.push(textNode);

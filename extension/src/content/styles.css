@@ -657,17 +657,17 @@
   right: 20px !important;
   width: 280px !important;
   max-height: calc(100vh - 40px) !important;
-  background: rgba(22, 28, 36, 0.95) !important;
+  background: rgba(255, 255, 255, 0.95) !important;
   backdrop-filter: blur(20px) saturate(180%) !important;
   -webkit-backdrop-filter: blur(20px) saturate(180%) !important;
-  border: 1px solid rgba(56, 189, 248, 0.25) !important;
+  border: 1px solid #E2E8F0 !important;
   border-radius: 16px !important;
   z-index: 2147483646 !important;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4) !important;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1) !important;
   display: flex !important;
   flex-direction: column !important;
-  font-family: system-ui, -apple-system, sans-serif !important;
-  color: #e2e8f0 !important;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif !important;
+  color: #1E293B !important;
   overflow: hidden !important;
   animation: langlua-appear 300ms ease !important;
 }
@@ -676,16 +676,17 @@
   padding: 16px !important;
   font-size: 14px !important;
   font-weight: 700 !important;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05) !important;
+  border-bottom: 1px solid #E2E8F0 !important;
   display: flex !important;
   justify-content: space-between !important;
   align-items: center !important;
-  background: rgba(56, 189, 248, 0.05) !important;
+  background: rgba(59, 130, 246, 0.05) !important;
+  color: #1E293B !important;
 }
 
 .ll-sidebar-badge {
   font-size: 10px !important;
-  background: #0ea5e9 !important;
+  background: #3B82F6 !important;
   color: white !important;
   padding: 2px 6px !important;
   border-radius: 4px !important;
@@ -702,19 +703,19 @@
   border-radius: 10px !important;
   margin-bottom: 4px !important;
   cursor: pointer !important;
-  transition: background 150ms ease !important;
+  transition: all 150ms ease !important;
   border: 1px solid transparent !important;
 }
 
 .ll-sidebar-item:hover {
-  background: rgba(255, 255, 255, 0.03) !important;
-  border-color: rgba(56, 189, 248, 0.1) !important;
+  background: rgba(59, 130, 246, 0.04) !important;
+  border-color: rgba(59, 130, 246, 0.1) !important;
 }
 
 .ll-sidebar-word {
   font-size: 14px !important;
   font-weight: 500 !important;
-  color: #38bdf8 !important;
+  color: #2563EB !important;
 }
 
 .ll-sidebar-quiz {
@@ -724,7 +725,7 @@
 
 .ll-sidebar-context {
   font-size: 11px !important;
-  color: #94a3b8 !important;
+  color: #64748B !important;
   font-style: italic !important;
   margin-bottom: 8px !important;
 }
@@ -733,11 +734,11 @@
   all: initial !important;
   display: block !important;
   width: 100% !important;
-  background: rgba(0, 0, 0, 0.3) !important;
-  border: 1px solid rgba(56, 189, 248, 0.2) !important;
-  border-radius: 6px !important;
-  padding: 6px 10px !important;
-  color: white !important;
+  background: #F1F5F9 !important;
+  border: 1px solid #CBD5E1 !important;
+  border-radius: 8px !important;
+  padding: 7px 10px !important;
+  color: #1E293B !important;
   font-size: 12px !important;
   box-sizing: border-box !important;
   outline: none !important;
@@ -751,9 +752,9 @@
 
 .ll-sidebar-feedback.correct { color: #06D6A0 !important; }
 .ll-sidebar-feedback.wrong { color: #EF476F !important; }
-.ll-sidebar-feedback.checking { color: #94a3b8 !important; }
+.ll-sidebar-feedback.checking { color: #64748B !important; }
 
 .ll-sidebar-item.completed {
   opacity: 0.6 !important;
-  background: rgba(6, 214, 160, 0.05) !important;
+  background: rgba(6, 214, 160, 0.03) !important;
 }
