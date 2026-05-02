@@ -103,9 +103,8 @@ export const selectWords = (intensity: number): WordMap => {
       const lower = word.toLowerCase();
       if (!/^[a-zA-Z]{4,15}$/.test(word) || stopwords.has(lower)) continue;
 
-      let prob = 0.05;
-      if (intensity >= 4 && intensity <= 6) prob = 0.15;
-      if (intensity >= 7) prob = 0.30;
+      // Linear scaling: 1 maps to ~2%, 5 maps to ~15%, 10 maps to ~40%
+      const prob = (intensity * 0.04); 
 
       if (Math.random() < prob) {
         wordsSet.add(lower);
