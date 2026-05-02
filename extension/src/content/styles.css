@@ -48,9 +48,7 @@
   position: absolute !important;
   z-index: 2147483647 !important;
   width: 280px !important;
-  background: rgba(255, 255, 255, 0.95) !important;
-  backdrop-filter: blur(12px) !important;
-  -webkit-backdrop-filter: blur(12px) !important;
+  background: #ffffff !important;
   border: 1px solid #E2E8F0 !important;
   border-radius: 16px !important;
   padding: 16px !important;
@@ -363,13 +361,11 @@
   position: fixed !important;
   inset: 0 !important;
   z-index: 2147483646 !important;
-  background: rgba(0, 0, 0, 0) !important;
+  background: rgba(0, 0, 0, 0.45) !important;
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
   animation: langlua-modal-fade-in 250ms cubic-bezier(0.16, 1, 0.3, 1) !important;
-  backdrop-filter: blur(4px) !important;
-  -webkit-backdrop-filter: blur(4px) !important;
 }
 
 .ll-save-modal-overlay.ll-save-modal-closing {
@@ -380,9 +376,7 @@
   all: initial !important;
   position: relative !important;
   width: 360px !important;
-  background: rgba(255, 255, 255, 0.98) !important;
-  backdrop-filter: blur(12px) !important;
-  -webkit-backdrop-filter: blur(12px) !important;
+  background: #ffffff !important;
   border: 1px solid #E2E8F0 !important;
   border-radius: 24px !important;
   padding: 28px !important;
@@ -657,9 +651,7 @@
   right: 20px !important;
   width: 280px !important;
   max-height: calc(100vh - 40px) !important;
-  background: rgba(255, 255, 255, 0.95) !important;
-  backdrop-filter: blur(20px) saturate(180%) !important;
-  -webkit-backdrop-filter: blur(20px) saturate(180%) !important;
+  background: #ffffff !important;
   border: 1px solid #E2E8F0 !important;
   border-radius: 16px !important;
   z-index: 2147483646 !important;
