@@ -15,8 +15,6 @@ const app  = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db   = getFirestore(app);
 
-const DASHBOARD_URL = "http://localhost:3000/dashboard";
-
 async function reloadAllTabs() {
   const tabs = await chrome.tabs.query({});
   for (const tab of tabs) {
@@ -33,9 +31,6 @@ document.addEventListener("DOMContentLoaded", async () => {
   const intensityLbl = document.getElementById("intensity-lbl");
   const creditsVal   = document.getElementById("credits-val");
   const streakVal    = document.getElementById("streak-val");
-  const appLink      = document.getElementById("link-app") as HTMLAnchorElement | null;
-
-  if (appLink) appLink.href = DASHBOARD_URL;
 
   const storageObj = await chrome.storage.local.get(["uid"]) as { uid?: string };
 
@@ -69,7 +64,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   document.getElementById("btn-login")?.addEventListener("click", () => {
     chrome.identity.getAuthToken({ interactive: true }, async (token) => {
       if (chrome.runtime.lastError || !token) {
-        console.error(chrome.runtime.lastError);
+        console.error("Sign-in failed", chrome.runtime.lastError);
         return;
       }
       try {
@@ -78,17 +73,12 @@ document.addEventListener("DOMContentLoaded", async () => {
         await new Promise<void>((resolve) =>
           chrome.storage.local.set({ uid: result.user.uid }, resolve)
         );
-        // Reload all tabs so content scripts pick up the new uid
         await reloadAllTabs();
         window.location.reload();
       } catch (e) {
         console.error("Sign-in failed", e);
       }
     });
-  });
-
-  document.getElementById("btn-dash")?.addEventListener("click", () => {
-    chrome.tabs.create({ url: DASHBOARD_URL });
   });
 
   document.getElementById("btn-logout")?.addEventListener("click", async () => {

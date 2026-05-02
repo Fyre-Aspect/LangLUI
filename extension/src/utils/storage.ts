@@ -1,7 +1,7 @@
 export const storageGet = <T>(key: string): Promise<T | null> =>
   new Promise((resolve) =>
     chrome.storage.local.get([key], (result) =>
-      resolve(result[key] ?? null)
+      resolve((result[key] as T) ?? null)
     )
   );
 

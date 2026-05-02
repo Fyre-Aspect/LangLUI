@@ -1,5 +1,5 @@
 const geminiUrl = () =>
-  `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`;
+  `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`;
 
 export const getDefinition = async (word: string): Promise<string> => {
   const prompt = `Define the English word '${word}' in one or two simple sentences. Be concise. No formatting.`;
