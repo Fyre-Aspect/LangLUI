@@ -11,6 +11,7 @@ const LANG_NAMES: Record<string, string> = {
 };
 
 const CACHE_TTL_MS = 30 * 24 * 60 * 60 * 1000; // 30 days
+const BATCH_SIZE = 40; // Slightly larger batches for high intensity
 
 export async function translateWords(
   words: string[], lang: string
@@ -48,51 +49,64 @@ export async function translateWords(
 
   if (!uncached.length) return result;
 
-  // 3. Call Gemini Flash for uncached words
+  // 3. Process uncached words in batches
   const langName = LANG_NAMES[lang] ?? lang;
-  const prompt = `Translate these English words to ${langName}. Reply ONLY with minified JSON object {"english_word":"translation"}. No markdown, no extra text. Words: ${JSON.stringify(uncached)}`;
-
-  try {
-    const resp = await fetch(FLASH, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        contents: [{ parts: [{ text: prompt }] }],
-        generationConfig: { temperature: 0.1, maxOutputTokens: 1024 },
-      }),
-    });
-
-    if (!resp.ok) {
-      console.error('[LangLua] Flash error:', resp.status, await resp.text());
-      return result;
-    }
-
-    const data = await resp.json();
-    const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '{}';
-    const cleanText = text.replace(/```json/g, '').replace(/```/g, '').trim();
-    const parsed = JSON.parse(cleanText);
-
-    const cacheUpdates: Record<string, any> = {};
-    for (const [w, t] of Object.entries(parsed)) {
-      const lower = w.toLowerCase();
-      const translation = t as string;
-      result[lower] = translation;
-      cacheUpdates[`t__${lower}__${lang}`] = { v: translation, ts: Date.now() };
-    }
-    
-    await chrome.storage.local.set(cacheUpdates);
-    return result;
-  } catch (error) {
-    console.error('[LangLua] Translation error:', error);
-    return result;
+  const batches: string[][] = [];
+  for (let i = 0; i < uncached.length; i += BATCH_SIZE) {
+    batches.push(uncached.slice(i, i + BATCH_SIZE));
   }
+
+  console.log(`[LangLua] Translating ${uncached.length} words in ${batches.length} batches...`);
+
+  const cacheUpdates: Record<string, any> = {};
+
+  const translateBatch = async (batch: string[]) => {
+    const prompt = `Translate these English words to ${langName}. Reply ONLY with a valid JSON object where keys are the English words and values are the translations. No markdown, no extra text. Words: ${JSON.stringify(batch)}`;
+
+    try {
+      const resp = await fetch(FLASH, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: prompt }] }],
+          generationConfig: { temperature: 0.1, maxOutputTokens: 1024 },
+        }),
+      });
+
+      if (!resp.ok) {
+        console.error('[LangLua] Batch translation failed:', resp.status);
+        return;
+      }
+
+      const data = await resp.json();
+      const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '{}';
+      const cleanText = text.replace(/```json/g, '').replace(/```/g, '').trim();
+      const parsed = JSON.parse(cleanText);
+
+      for (const [w, t] of Object.entries(parsed)) {
+        const lower = w.toLowerCase();
+        const translation = t as string;
+        result[lower] = translation;
+        cacheUpdates[`t__${lower}__${lang}`] = { v: translation, ts: Date.now() };
+      }
+    } catch (e) {
+      console.error('[LangLua] Batch error:', e);
+    }
+  };
+
+  // Run batches in parallel (limited concurrency could be added if needed, but for 50-100 words this is fine)
+  await Promise.all(batches.map(batch => translateBatch(batch)));
+
+  if (Object.keys(cacheUpdates).length > 0) {
+    await chrome.storage.local.set(cacheUpdates);
+  }
+
+  return result;
 }
 
 export async function checkGuess(original: string, guess: string, lang?: string): Promise<boolean> {
   const lowerOriginal = original.toLowerCase().trim();
   const lowerGuess = guess.toLowerCase().trim();
-  
-  // 1. Simple direct match check (handles English guesses in Normal mode or exact matches)
   if (lowerGuess === lowerOriginal) return true;
 
   const langName = lang ? (LANG_NAMES[lang] || lang) : 'the target language';
@@ -131,7 +145,6 @@ export async function getDefinition(original: string, context?: string): Promise
     });
     const data = await resp.json();
     let def = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || 'No definition found.';
-    // Clean any markdown backticks if Gemini ignored the instruction
     def = def.replace(/[*_`]/g, '');
     return def;
   } catch (error) {
