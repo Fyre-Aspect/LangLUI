@@ -77,6 +77,25 @@ document.addEventListener("DOMContentLoaded", async () => {
     await ensureDefaults();
     await updateStreak();
 
+    // Try Out Mode toggle
+    const tryoutToggle = document.getElementById("tryout-toggle") as HTMLInputElement;
+    const modeHint     = document.getElementById("mode-hint");
+    const tryOutData   = await chrome.storage.local.get("tryOutMode") as { tryOutMode?: boolean };
+    const tryOutMode   = tryOutData.tryOutMode ?? false;
+    if (tryoutToggle) {
+      tryoutToggle.checked = tryOutMode;
+      if (modeHint) modeHint.style.display = tryOutMode ? "block" : "none";
+      tryoutToggle.addEventListener("change", async (e) => {
+        const checked = (e.target as HTMLInputElement).checked;
+        await chrome.storage.local.set({ tryOutMode: checked });
+        if (modeHint) modeHint.style.display = checked ? "block" : "none";
+        const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+        if (tab?.id) {
+          chrome.tabs.sendMessage(tab.id, { type: "TOGGLE_TRYOUT", value: checked });
+        }
+      });
+    }
+
     const data = await chrome.storage.local.get([
       "targetLanguage",
       "intensity",

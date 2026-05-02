@@ -1,136 +1,169 @@
 import { selectWords } from '../utils/wordSelector';
 import { translateWords } from '../services/translationService';
-import { createTooltip, positionTooltip, hideTooltip } from './tooltip';
+import { buildTooltip, removeTip } from './tooltip';
 
-const init = async () => {
+// ── Module-level in-memory caches (zero-latency hover access)
+const transMap   = new Map<string, string>(); // word → translation
+const contextMap = new Map<string, string>(); // word → sentence context
+
+let uid        = '';
+let lang       = 'ja';
+let intensity  = 5;
+let tryOutMode = false;
+let scanDone   = false;
+
+// ── INIT ──────────────────────────────────────────────────────────────────────
+async function init() {
   try {
-    console.log('[LangLua] content script init started');
+    const store = await chrome.storage.local.get([
+      'uid', 'isActive', 'targetLanguage', 'intensity', 'tryOutMode',
+    ]) as Record<string, any>;
 
-    const storageObj = await chrome.storage.local.get(['uid', 'isActive']) as { uid: string, isActive?: boolean };
-    console.log('[LangLua] storage:', JSON.stringify(storageObj));
+    uid = store.uid ?? '';
+    if (!uid)                        { console.log('[LangLua] not signed in'); return; }
+    if (store.isActive === false)    { console.log('[LangLua] inactive'); return; }
 
-    const uid = storageObj.uid;
-    if (!uid) {
-      console.log('[LangLua] No uid found, aborting.');
-      return;
-    }
-    if (storageObj.isActive === false) {
-      console.log('[LangLua] isActive is false, aborting.');
-      return;
-    }
+    lang       = store.targetLanguage ?? 'ja';
+    intensity  = store.intensity      ?? 5;
+    tryOutMode = store.tryOutMode     ?? false;
 
-    const response = await new Promise((resolve, reject) => {
-      chrome.runtime.sendMessage({ type: "GET_USER_PREFS", uid }, (res) => {
-        if (chrome.runtime.lastError) {
-          reject(chrome.runtime.lastError);
-        } else {
-          resolve(res);
-        }
-      });
-    });
-
-    console.log('[LangLua] prefs response:', JSON.stringify(response));
-
-    const prefs = response as { targetLanguage: string; intensity: number; error?: string };
-    if (!response || prefs.error || !prefs.targetLanguage) {
-      console.log('[LangLua] Bad prefs, aborting:', prefs);
-      return;
-    }
-
-    const { words, wordNodes } = selectWords(prefs.intensity);
-    console.log('[LangLua] selected words count:', words.length, words.slice(0, 10));
-
-    if (words.length === 0) {
-      console.log('[LangLua] No words selected, aborting.');
-      return;
-    }
-
-    const translations = await translateWords(words, prefs.targetLanguage);
-    console.log('[LangLua] translations received:', Object.keys(translations).length, translations);
-
-    // Get unique Text nodes that we found words in
-    const uniqueNodes = new Set<Text>();
-    wordNodes.forEach(nodes => nodes.forEach(n => uniqueNodes.add(n)));
-    console.log('[LangLua] unique text nodes to process:', uniqueNodes.size);
-
-    let replacedCount = 0;
-
-    // Iterate through all actual nodes
-    uniqueNodes.forEach(node => {
-      const text = node.nodeValue;
-      const parent = node.parentNode;
-      if (!text || !parent) return;
-
-      // Check which translated words exist in this text node
-      const matchingWords = words.filter(word =>
-        translations[word] && new RegExp(`\\b${word}\\b`, 'gi').test(text)
-      );
-
-      if (matchingWords.length === 0) return;
-
-      // We will replace the text node by building a DocumentFragment
-      const fragment = document.createDocumentFragment();
-
-      // A simple regex that matches ANY of the translated words
-      const combinedRegex = new RegExp(`\\b(${matchingWords.join('|')})\\b`, 'gi');
-
-      let match;
-      let lastIndex = 0;
-
-      while ((match = combinedRegex.exec(text)) !== null) {
-        const matchedWord = match[0];
-        const lowerWord = matchedWord.toLowerCase();
-        const translation = translations[lowerWord];
-
-        if (!translation) continue;
-
-        // Add text leading up to the match
-        if (match.index > lastIndex) {
-          fragment.appendChild(document.createTextNode(text.substring(lastIndex, match.index)));
-        }
-
-        // Add the translated span
-        const span = document.createElement('span');
-        span.className = 'langlua-word';
-        span.dataset.original = lowerWord;
-        span.dataset.translation = translation;
-        span.innerText = translation;
-
-        span.addEventListener('mouseenter', () => {
-          const rect = span.getBoundingClientRect();
-          const tooltip = createTooltip(lowerWord, translation, uid);
-          positionTooltip(tooltip, rect);
-        });
-
-        fragment.appendChild(span);
-        lastIndex = match.index + matchedWord.length;
-        replacedCount++;
-      }
-
-      // Add any trailing text
-      if (lastIndex < text.length) {
-        fragment.appendChild(document.createTextNode(text.substring(lastIndex)));
-      }
-
-      // Only replace if we actually modified something
-      if (lastIndex > 0) {
-        parent.replaceChild(fragment, node);
-      }
-    });
-
-    console.log('[LangLua] done. Total words replaced on page:', replacedCount);
-
-    document.addEventListener('click', (e) => {
-      const target = e.target as HTMLElement;
-      if (!target.closest('.langlua-tooltip') && !target.closest('.langlua-word')) {
-        hideTooltip();
-      }
-    });
-  } catch (error) {
-    console.error("[LangLua] content script error:", error);
+    console.log(`[LangLua] init lang=${lang} intensity=${intensity} tryOut=${tryOutMode}`);
+    await runScan();
+    watchMutations();
+  } catch (err) {
+    console.error('[LangLua] init error:', err);
   }
-};
+}
 
+// ── SCAN ──────────────────────────────────────────────────────────────────────
+async function runScan() {
+  const { words, nodeMap, contextFor } = selectWords(intensity);
+  if (!words.length) { console.log('[LangLua] no words selected'); return; }
+
+  // Store sentence contexts
+  for (const [word, ctx] of Object.entries(contextFor)) {
+    contextMap.set(word, ctx);
+  }
+
+  // Translate all — reads from local dict + chrome.storage batch + Flash API
+  const translations = await translateWords(words, lang);
+  for (const [w, t] of Object.entries(translations)) {
+    transMap.set(w, t);
+  }
+
+  // Replace in DOM
+  let count = 0;
+  for (const [word, translation] of transMap) {
+    const nodes = nodeMap.get(word);
+    if (!nodes) continue;
+    for (const node of nodes) {
+      if (!node.parentNode) continue;
+      replaceInNode(node, word, translation);
+      count++;
+    }
+  }
+
+  console.log(`[LangLua] replaced ${count} instances across ${transMap.size} words`);
+  scanDone = true;
+}
+
+// ── DOM REPLACE ───────────────────────────────────────────────────────────────
+function replaceInNode(node: Text, word: string, translation: string) {
+  const text    = node.nodeValue ?? '';
+  const parent  = node.parentNode;
+  if (!text || !parent) return;
+
+  const regex   = new RegExp(`\\b${word}\\b`, 'gi');
+  const matches = [...text.matchAll(regex)];
+  if (!matches.length) return;
+
+  const frag = document.createDocumentFragment();
+  let last   = 0;
+
+  for (const m of matches) {
+    const start = m.index!;
+    if (start > last) frag.appendChild(document.createTextNode(text.slice(last, start)));
+
+    const span = document.createElement('span');
+
+    if (tryOutMode) {
+      span.className   = 'langlua-tryout';
+      span.textContent = m[0]; // keep original English
+      span.addEventListener('click', (e) => {
+        e.stopPropagation();
+        buildTooltip(span, m[0], translation, lang, contextMap.get(word) ?? '', true, uid);
+      });
+    } else {
+      span.className = 'langlua-word';
+      span.textContent = translation;
+      span.dataset.original    = m[0];
+      span.dataset.translation = translation;
+
+      let hoverTimer: ReturnType<typeof setTimeout> | null = null;
+      span.addEventListener('mouseenter', () => {
+        // Instant — data already in transMap/contextMap, no API call
+        hoverTimer = setTimeout(() => {
+          buildTooltip(span, m[0], translation, lang, contextMap.get(word) ?? '', false, uid);
+        }, 120); // tiny delay prevents flicker on fast cursor movement
+      });
+      span.addEventListener('mouseleave', () => {
+        if (hoverTimer) { clearTimeout(hoverTimer); hoverTimer = null; }
+      });
+    }
+
+    frag.appendChild(span);
+    last = start + m[0].length;
+  }
+
+  if (last < text.length) frag.appendChild(document.createTextNode(text.slice(last)));
+  parent.replaceChild(frag, node);
+}
+
+// ── MUTATION OBSERVER — rescan new content ────────────────────────────────────
+let rescanTimer: ReturnType<typeof setTimeout> | null = null;
+
+function watchMutations() {
+  new MutationObserver((muts) => {
+    if (!scanDone) return;
+    const hasNew = muts.some(m =>
+      [...m.addedNodes].some(n =>
+        n.nodeType === Node.ELEMENT_NODE &&
+        !(n as Element).classList?.contains('langlua-word') &&
+        !(n as Element).classList?.contains('langlua-tryout') &&
+        ((n as Element).textContent?.trim().length ?? 0) > 30
+      )
+    );
+    if (!hasNew) return;
+    if (rescanTimer) clearTimeout(rescanTimer);
+    rescanTimer = setTimeout(runScan, 1800);
+  }).observe(document.body, { childList: true, subtree: true });
+}
+
+// ── MESSAGES FROM POPUP ───────────────────────────────────────────────────────
+chrome.runtime.onMessage.addListener((msg, _sender, respond) => {
+  if (msg.type === 'RELOAD') {
+    init().then(() => respond({ ok: true }));
+    return true;
+  }
+  if (msg.type === 'TOGGLE_TRYOUT') {
+    tryOutMode = msg.value as boolean;
+    chrome.storage.local.set({ tryOutMode });
+    location.reload();
+    respond({ ok: true });
+  }
+});
+
+// ── Global click to dismiss tooltip ──────────────────────────────────────────
+document.addEventListener('click', (e) => {
+  const t = e.target as HTMLElement;
+  if (!t.closest('#langlua-tooltip-container') &&
+      !t.closest('.langlua-word') &&
+      !t.closest('.langlua-tryout')) {
+    removeTip();
+  }
+});
+
+// ── Bootstrap ─────────────────────────────────────────────────────────────────
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', init);
 } else {

@@ -71,6 +71,26 @@ body {
   border-bottom: 1px solid #2E2E50;
 }
 
+/* ── Try Out Mode row ── */
+.mode-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 16px;
+  border-bottom: 1px solid #2E2E50;
+}
+.mode-label {
+  font-size: 13px;
+  color: #F0EEFF;
+}
+.mode-hint {
+  padding: 6px 16px 8px;
+  font-size: 11px;
+  color: #5A5A80;
+  border-bottom: 1px solid #2E2E50;
+  display: none;
+}
+
 /* ── Stat rows ── */
 .stat-row {
   display: flex;
