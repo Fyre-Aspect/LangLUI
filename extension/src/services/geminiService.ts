@@ -5,7 +5,7 @@ export const getDefinition = async (word: string): Promise<string> => {
   const prompt = `Define the English word '${word}' in one or two simple sentences. Be concise. No formatting.`;
   
   const response = await ai.models.generateContent({
-    model: 'gemini-2.5-flash',
+    model: 'gemini-2.0-flash',
     contents: prompt,
   });
   
@@ -17,7 +17,7 @@ export const checkGuess = async (word: string, guess: string): Promise<boolean> 
   const prompt = `Is '${guess}' an acceptable or correct definition of '${word}'? Be lenient — partial understanding counts. Reply with ONLY 'yes' or 'no'.`;
   
   const response = await ai.models.generateContent({
-    model: 'gemini-2.5-flash',
+    model: 'gemini-2.0-flash',
     contents: prompt,
   });
   

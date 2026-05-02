@@ -1,3 +1,5 @@
+export {};
+
 const DEFAULT_PREFS = { targetLanguage: "es", intensity: 5 };
 const DEFAULT_STATS = { credits: 0, streak: 0, lastActiveDate: "" };
 
@@ -83,7 +85,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       "streak",
     ]);
 
-    const lang = data.targetLanguage ?? DEFAULT_PREFS.targetLanguage;
+    const lang = String(data.targetLanguage ?? DEFAULT_PREFS.targetLanguage);
 
     if (langSelect) {
       langSelect.value = lang;
