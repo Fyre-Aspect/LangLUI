@@ -80,14 +80,7 @@ export const selectWords = (intensity: number): WordMap => {
   });
 
   const stopwords = new Set([
-    'the','and','for','with','that','this','have','will','from','they','what',
-    'when','where','which','there','their','been','would','could','should','about',
-    'other','into','your','more','also','some','than','then','only','very','just',
-    'like','over','such','these','those','here','each','much','after','before',
-    'while','being','make','take','come','know','think','look','want','give',
-    'back','good','down','well','find','does','help','said','were','made',
-    'even','most','used','many','long','high','both','area','need','large',
-    'often','hand','home','read','next','hard','real','play','left','important',
+    'the','and','for','with','that','this','have','from','they'
   ]);
 
   const nodeMap    = new Map<string, Text[]>();
@@ -101,10 +94,11 @@ export const selectWords = (intensity: number): WordMap => {
 
     for (const word of tokens) {
       const lower = word.toLowerCase();
-      if (!/^[a-zA-Z]{4,15}$/.test(word) || stopwords.has(lower)) continue;
+      // Only skip the most absolute basic glue words
+      if (!/^[a-zA-Z]{2,30}$/.test(word) || stopwords.has(lower)) continue;
 
-      // Linear scaling: 1 maps to ~2%, 5 maps to ~15%, 10 maps to ~40%
-      const prob = (intensity * 0.04); 
+      // Extreme scaling: 1 maps to 10%, 10 maps to 100%
+      const prob = (intensity * 0.10); 
 
       if (Math.random() < prob) {
         wordsSet.add(lower);

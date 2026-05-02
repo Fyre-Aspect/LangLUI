@@ -9,7 +9,6 @@ export function buildTooltip(
   translation: string,
   lang: string,
   context: string,
-  tryOutMode: boolean,
   uid: string,
 ) {
   removeTip();
@@ -27,47 +26,25 @@ export function buildTooltip(
     ? `<div class="ll-context">${escHtml(maskedContext)}</div><div class="ll-divider"></div>`
     : '';
 
-  if (tryOutMode) {
-    tip.innerHTML = `
-      <div class="ll-header">
-        <span class="ll-original">${escHtml(original)}</span>
-        <span class="ll-arrow">→</span>
-        <span class="ll-lang-badge">${langLabel}</span>
-      </div>
-      ${contextSnip}
-      <div class="ll-quiz-label">💬 What is this in ${langLabel}?</div>
-      <input id="ll-guess" class="ll-input" type="text" placeholder="Type your guess…" autocomplete="off" />
-      <div class="ll-btn-row">
-        <button id="ll-check" class="ll-btn-primary">Check →</button>
-        <button id="ll-skip" class="ll-btn-ghost">Skip +1 🪙</button>
-      </div>
-      <div id="ll-feedback" class="ll-feedback"></div>
-      <div class="ll-divider"></div>
-      <button id="ll-save-word" class="ll-save-word-btn">💾 Save Word</button>
-    `;
-  } else {
-    // Normal mode: hide the English 'original' word in the header so it's not a spoiler
-    tip.innerHTML = `
-      <div class="ll-header">
-        <span class="ll-translation">${escHtml(translation)}</span>
-        <button id="ll-play" class="ll-play-btn" title="Pronounce">🔊</button>
-        <span class="ll-lang-badge">${langLabel}</span>
-      </div>
-      ${contextSnip}
-      <div class="ll-quiz-label">💡 What do you think it means?</div>
-      <input id="ll-guess" class="ll-input" type="text" placeholder="Type guess…" autocomplete="off" />
-      <div class="ll-btn-row">
-        <button id="ll-check" class="ll-btn-primary">Check</button>
-        <button id="ll-skip" class="ll-btn-ghost">Skip +1 🪙</button>
-      </div>
-      <div id="ll-feedback" class="ll-feedback"></div>
-      <div class="ll-divider"></div>
-      <button id="ll-def-btn" class="ll-def-link">Show full definition</button>
-      <div id="ll-def-text" class="ll-def-text"></div>
-      <div class="ll-divider"></div>
-      <button id="ll-save-word" class="ll-save-word-btn">💾 Save Word</button>
-    `;
-  }
+  // Normal mode: hide the English 'original' word in the header so it's not a spoiler
+  tip.innerHTML = `
+    <div class="ll-header">
+      <span class="ll-translation">${escHtml(translation)}</span>
+      <button id="ll-play" class="ll-play-btn" title="Pronounce">🔊</button>
+      <span class="ll-lang-badge">${langLabel}</span>
+    </div>
+    ${contextSnip}
+    <div class="ll-quiz-label">💡 What do you think it means?</div>
+    <input id="ll-guess" class="ll-input" type="text" placeholder="Type guess…" autocomplete="off" />
+    <div class="ll-btn-row">
+      <button id="ll-check" class="ll-btn-primary">Check</button>
+      <button id="ll-skip" class="ll-btn-ghost">Skip +1 🪙</button>
+    </div>
+    <div id="ll-feedback" class="ll-feedback"></div>
+    <div class="ll-divider"></div>
+    <button id="ll-def-btn" class="ll-def-link">Show full definition</button>
+    <div id="ll-def-text" class="ll-def-text"></div>
+  `;
 
   document.body.appendChild(tip);
   positionTip(tip, anchor);
@@ -95,7 +72,7 @@ export function buildTooltip(
 
   const showFeedback = (correct: boolean) => {
     const fb = tip.querySelector<HTMLElement>('#ll-feedback')!;
-    const correctAnswer = tryOutMode ? translation : original;
+    const correctAnswer = original;
 
     if (correct) {
       fb.innerHTML = `<span class="ll-correct">✅ Correct! +15 🪙</span>`;
@@ -130,7 +107,7 @@ export function buildTooltip(
     e.stopPropagation();
     chrome.runtime.sendMessage({ type: 'ADD_CREDITS', uid, amount: 1 });
     const fb = tip.querySelector<HTMLElement>('#ll-feedback')!;
-    fb.innerHTML = `<span class="ll-reveal">The answer is: <strong>${escHtml(tryOutMode ? translation : original)}</strong></span>`;
+    fb.innerHTML = `<span class="ll-reveal">The answer is: <strong>${escHtml(original)}</strong></span>`;
   });
 
   // Lazy definition (normal mode only)
