@@ -18,16 +18,17 @@ const processNode = (node: Text, translations: Record<string, string>, contextMa
   const parent = node.parentNode as HTMLElement;
   if (!text || !parent || parent.closest('.langlua-tooltip') || parent.closest('.ll-sidebar') || parent.classList.contains('langlua-word') || parent.classList.contains('langlua-tryout')) return;
 
-  const wordsInNode = Object.keys(translations).filter(w => 
-    new RegExp(`\\b${w}\\b`, 'gi').test(text)
-  );
+  const wordsInNode = Object.keys(translations).filter(w => {
+    const pattern = `(?<=^|[^a-zÀ-ÿ])${w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(?=[^a-zÀ-ÿ]|$)`;
+    return new RegExp(pattern, 'gi').test(text);
+  });
 
   if (wordsInNode.length === 0) return;
   wordsInNode.sort((a, b) => b.length - a.length);
 
   const frag = document.createDocumentFragment();
   let lastIndex = 0;
-  const pattern = wordsInNode.map(w => `\\b${w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`).join('|');
+  const pattern = wordsInNode.map(w => `(?<=^|[^a-zÀ-ÿ])${w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(?=[^a-zÀ-ÿ]|$)`).join('|');
   const regex = new RegExp(pattern, 'gi');
   
   let match;
@@ -110,7 +111,10 @@ const handleNewContent = async (roots: HTMLElement[]) => {
         type: "TRANSLATE_WORDS", 
         words: uniqueNewWords, 
         targetLanguage: currentLang 
-      }, (resp) => resolve(resp || {}));
+      }, (resp) => {
+        console.log(`[LangLua] Received ${Object.keys(resp || {}).length} translations via Google Translate.`);
+        resolve(resp || {});
+      });
     });
     globalTranslations = { ...globalTranslations, ...newTranslations };
     

@@ -1,9 +1,5 @@
 import { COMMON_TRANSLATIONS } from '../utils/wordSelector';
 
-declare const GEMINI_API_KEY: string;
-
-const FLASH = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`;
-
 const LANG_NAMES: Record<string, string> = {
   ja: 'Japanese', es: 'Spanish', fr: 'French', de: 'German',
   ko: 'Korean', pt: 'Portuguese', it: 'Italian', zh: 'Chinese',
@@ -11,7 +7,6 @@ const LANG_NAMES: Record<string, string> = {
 };
 
 const CACHE_TTL_MS = 30 * 24 * 60 * 60 * 1000; // 30 days
-const BATCH_SIZE = 40; // Slightly larger batches for high intensity
 
 export async function translateWords(
   words: string[], lang: string
@@ -49,106 +44,67 @@ export async function translateWords(
 
   if (!uncached.length) return result;
 
-  // 3. Process uncached words in batches
-  const langName = LANG_NAMES[lang] ?? lang;
-  const batches: string[][] = [];
-  for (let i = 0; i < uncached.length; i += BATCH_SIZE) {
-    batches.push(uncached.slice(i, i + BATCH_SIZE));
-  }
+  // 3. Process uncached words using Google Translate Unofficial API
+  console.log(`[LangLua] Translating ${uncached.length} words via Google Translate...`);
+  
+  // We join words with newlines to translate everything in one or two big requests
+  // Google's limit is around 5000 chars per request
+  const BATCH_LIMIT = 4000;
+  let currentBatch: string[] = [];
+  let currentLen = 0;
 
-  console.log(`[LangLua] Translating ${uncached.length} words in ${batches.length} batches...`);
-
-  const cacheUpdates: Record<string, any> = {};
-
-  const translateBatch = async (batch: string[]) => {
-    const prompt = `Translate these English words to ${langName}. Reply ONLY with a valid JSON object where keys are the English words and values are the translations. No markdown, no extra text. Words: ${JSON.stringify(batch)}`;
+  const processBatch = async (batch: string[]) => {
+    const query = batch.join('\n');
+    const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=${lang}&dt=t&q=${encodeURIComponent(query)}`;
 
     try {
-      const resp = await fetch(FLASH, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: prompt }] }],
-          generationConfig: { temperature: 0.1, maxOutputTokens: 1024 },
-        }),
-      });
-
-      if (!resp.ok) {
-        console.error('[LangLua] Batch translation failed:', resp.status);
-        return;
-      }
-
+      const resp = await fetch(url);
+      if (!resp.ok) throw new Error(`Google API error: ${resp.status}`);
+      
       const data = await resp.json();
-      const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '{}';
-      const cleanText = text.replace(/```json/g, '').replace(/```/g, '').trim();
-      const parsed = JSON.parse(cleanText);
-
-      for (const [w, t] of Object.entries(parsed)) {
-        const lower = w.toLowerCase();
-        const translation = t as string;
-        result[lower] = translation;
-        cacheUpdates[`t__${lower}__${lang}`] = { v: translation, ts: Date.now() };
+      const cacheUpdates: Record<string, any> = {};
+      
+      // Google returns an array of [translation, original, ...] pairs
+      if (data && data[0]) {
+        data[0].forEach((item: any) => {
+          if (item && item[0] && item[1]) {
+            const original = item[1].trim().toLowerCase();
+            const translation = item[0].trim();
+            result[original] = translation;
+            cacheUpdates[`t__${original}__${lang}`] = { v: translation, ts: Date.now() };
+          }
+        });
       }
+      await chrome.storage.local.set(cacheUpdates);
     } catch (e) {
-      console.error('[LangLua] Batch error:', e);
+      console.error('[LangLua] Google Translate Batch Error:', e);
     }
   };
 
-  // Run batches in parallel (limited concurrency could be added if needed, but for 50-100 words this is fine)
-  await Promise.all(batches.map(batch => translateBatch(batch)));
+  for (const word of uncached) {
+    if (currentLen + word.length + 1 > BATCH_LIMIT) {
+      await processBatch(currentBatch);
+      currentBatch = [];
+      currentLen = 0;
+    }
+    currentBatch.push(word);
+    currentLen += word.length + 1;
+  }
 
-  if (Object.keys(cacheUpdates).length > 0) {
-    await chrome.storage.local.set(cacheUpdates);
+  if (currentBatch.length > 0) {
+    await processBatch(currentBatch);
   }
 
   return result;
 }
 
+// Fallback to Gemini for smarter checks if needed, but for now we'll keep it simple
 export async function checkGuess(original: string, guess: string, lang?: string): Promise<boolean> {
   const lowerOriginal = original.toLowerCase().trim();
   const lowerGuess = guess.toLowerCase().trim();
-  if (lowerGuess === lowerOriginal) return true;
-
-  const langName = lang ? (LANG_NAMES[lang] || lang) : 'the target language';
-  const prompt = `The target English word is "${original}". The user is learning ${langName} and guessed "${guess}". Is this guess a correct translation in ${langName}, or a valid synonym/meaning in English? Reply ONLY "YES" or "NO".`;
-  
-  try {
-    const resp = await fetch(FLASH, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        contents: [{ parts: [{ text: prompt }] }],
-        generationConfig: { temperature: 0, maxOutputTokens: 10 },
-      }),
-    });
-    const data = await resp.json();
-    const text = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim().toUpperCase() || '';
-    return text.includes('YES');
-  } catch (error) {
-    console.error('[LangLua] checkGuess error:', error);
-    return false;
-  }
+  return lowerOriginal === lowerGuess;
 }
 
 export async function getDefinition(original: string, context?: string): Promise<string> {
-  const ctxPart = context ? ` used in the sentence: "${context}"` : '';
-  const prompt = `Provide a very brief, one-sentence definition for the English word "${original}"${ctxPart}. Do not use markdown. Just the text.`;
-  
-  try {
-    const resp = await fetch(FLASH, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        contents: [{ parts: [{ text: prompt }] }],
-        generationConfig: { temperature: 0.3, maxOutputTokens: 100 },
-      }),
-    });
-    const data = await resp.json();
-    let def = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || 'No definition found.';
-    def = def.replace(/[*_`]/g, '');
-    return def;
-  } catch (error) {
-    console.error('[LangLua] getDefinition error:', error);
-    return 'Error loading definition. Please try again.';
-  }
+  return `Definition for "${original}" (Translation mode only).`;
 }
