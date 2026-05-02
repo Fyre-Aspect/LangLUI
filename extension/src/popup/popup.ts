@@ -1,4 +1,5 @@
-export {};
+import { initBorderGlow } from "./borderGlow";
+
 const DEFAULT_PREFS = { targetLanguage: "es", intensity: 5 };
 const DEFAULT_STATS = { credits: 0, streak: 0, lastActiveDate: "" };
 
@@ -38,8 +39,8 @@ const updateStreak = async () => {
   await chrome.storage.local.set({ streak: newStreak, lastActiveDate: today });
 };
 
-async function reloadAllTabs() {
-  const tabs = await chrome.tabs.query({});
+async function reloadActiveTab() {
+  const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
   for (const tab of tabs) {
     if (tab.id && tab.url && !tab.url.startsWith("chrome://") && !tab.url.startsWith("chrome-extension://")) {
       chrome.tabs.reload(tab.id).catch(() => {});
@@ -48,6 +49,8 @@ async function reloadAllTabs() {
 }
 
 document.addEventListener("DOMContentLoaded", async () => {
+  initBorderGlow("border-glow-card", { animated: true });
+
   const unauthView   = document.getElementById("unauth-view");
   const authView     = document.getElementById("auth-view");
   const langSelect   = document.getElementById("lang-select") as HTMLSelectElement;
@@ -66,7 +69,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     toggleActive.addEventListener("change", async (e) => {
       const isChecked = (e.target as HTMLInputElement).checked;
       await chrome.storage.local.set({ isActive: isChecked });
-      await reloadAllTabs();
+      await reloadActiveTab();
     });
   }
 
@@ -77,12 +80,31 @@ document.addEventListener("DOMContentLoaded", async () => {
     await ensureDefaults();
     await updateStreak();
 
+    // Try Out Mode toggle
+    const tryoutToggle = document.getElementById("tryout-toggle") as HTMLInputElement;
+    const modeHint     = document.getElementById("mode-hint");
+    const tryOutData   = await chrome.storage.local.get("tryOutMode") as { tryOutMode?: boolean };
+    const tryOutMode   = tryOutData.tryOutMode ?? false;
+    if (tryoutToggle) {
+      tryoutToggle.checked = tryOutMode;
+      if (modeHint) modeHint.style.display = tryOutMode ? "block" : "none";
+      tryoutToggle.addEventListener("change", async (e) => {
+        const checked = (e.target as HTMLInputElement).checked;
+        await chrome.storage.local.set({ tryOutMode: checked });
+        if (modeHint) modeHint.style.display = checked ? "block" : "none";
+        const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+        if (tab?.id) {
+          chrome.tabs.sendMessage(tab.id, { type: "TOGGLE_TRYOUT", value: checked });
+        }
+      });
+    }
+
     const data = await chrome.storage.local.get([
       "targetLanguage",
       "intensity",
       "credits",
       "streak",
-    ]);
+    ]) as { targetLanguage?: string; intensity?: number; credits?: number; streak?: number; };
 
     const lang = (data as any).targetLanguage ?? DEFAULT_PREFS.targetLanguage;
 
@@ -91,7 +113,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       langSelect.addEventListener("change", async (e) => {
         const newLang = (e.target as HTMLSelectElement).value;
         await chrome.storage.local.set({ targetLanguage: newLang });
-        await reloadAllTabs();
+        await reloadActiveTab();
       });
     }
 
@@ -107,7 +129,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     await chrome.storage.local.set({ uid: "local-user", isActive: true });
     await ensureDefaults();
     await updateStreak();
-    await reloadAllTabs();
+    await reloadActiveTab();
     window.location.reload();
   });
 
@@ -116,3 +138,5 @@ document.addEventListener("DOMContentLoaded", async () => {
     window.location.reload();
   });
 });
+
+export {};

@@ -1,38 +1,62 @@
-/* Replaced word — injected into host page */
+/* ── Replaced word on page ───────────────────────────────────────────────── */
 .langlua-word {
-  background: rgba(108, 99, 255, 0.18) !important;
-  border-bottom: 2px dashed #A89BFF !important;
+  background: rgba(56, 189, 248, 0.15) !important;
+  border-bottom: 2px solid rgba(56, 189, 248, 0.7) !important;
   border-radius: 3px !important;
-  padding: 0 2px !important;
-  cursor: pointer !important;
-  transition: background 150ms ease !important;
-  font-family: inherit !important;
-  font-size: inherit !important;
-  color: inherit !important;
+  padding: 0 3px !important;
+  color: #0ea5e9 !important;
+  font: inherit !important;
+  font-weight: 600 !important;
+  cursor: help !important;
   display: inline !important;
   text-decoration: none !important;
-  font-weight: inherit !important;
-  line-height: inherit !important;
-}
-.langlua-word:hover {
-  background: rgba(108, 99, 255, 0.32) !important;
+  margin: 0 !important;
+  transition: background 120ms ease, border-color 120ms ease, color 120ms ease !important;
 }
 
-/* Tooltip container — resets ALL host-page styles */
+.langlua-word:hover {
+  background: rgba(56, 189, 248, 0.28) !important;
+  border-bottom-color: #0ea5e9 !important;
+  color: #38bdf8 !important;
+}
+
+/* ── Try Out mode — keeps original English, dotted sky-blue underline ─────── */
+.langlua-tryout {
+  border-bottom: 2px dashed rgba(56, 189, 248, 0.55) !important;
+  cursor: pointer !important;
+  background: none !important;
+  color: inherit !important;
+  font: inherit !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  display: inline !important;
+  text-decoration: none !important;
+  transition: border-color 120ms ease !important;
+}
+
+.langlua-tryout:hover {
+  border-bottom-color: #38bdf8 !important;
+}
+
+.langlua-tryout:hover {
+  border-bottom-color: rgba(108, 99, 255, 0.8) !important;
+}
+
+/* ── Tooltip container ───────────────────────────────────────────────────── */
 .langlua-tooltip {
   all: initial;
   position: absolute !important;
   z-index: 2147483647 !important;
-  background: #1A1A2E !important;
-  border: 1px solid #6C63FF !important;
+  width: 280px !important;
+  background: rgba(22, 28, 36, 0.97) !important;
+  backdrop-filter: blur(20px) saturate(160%) !important;
+  -webkit-backdrop-filter: blur(20px) saturate(160%) !important;
+  border: 1px solid rgba(56, 189, 248, 0.25) !important;
   border-radius: 12px !important;
-  padding: 14px !important;
-  max-width: 300px !important;
-  width: 300px !important;
-  box-shadow: 0 8px 40px rgba(108,99,255,0.3), 0 0 0 1px rgba(108,99,255,0.1) !important;
+  padding: 14px 16px !important;
   font-family: system-ui, -apple-system, sans-serif !important;
   font-size: 13px !important;
-  color: #F0EEFF !important;
+  color: #e2e8f0 !important;
   line-height: 1.5 !important;
   box-sizing: border-box !important;
   display: none;
@@ -40,149 +64,264 @@
   opacity: 1 !important;
 }
 
-/* Pronunciation button */
-.langlua-pronounce-btn {
-  all: initial !important;
+@keyframes langlua-appear {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ── Header row: original → translation + play btn ──────────────────────── */
+.ll-header {
   display: flex !important;
   align-items: center !important;
   gap: 6px !important;
-  padding: 6px 10px !important;
-  background: rgba(108,99,255,0.15) !important;
-  border: 1px solid rgba(108,99,255,0.3) !important;
-  border-radius: 9999px !important;
-  color: #A89BFF !important;
-  font-size: 12px !important;
-  cursor: pointer !important;
-  transition: background 150ms ease !important;
+  margin-bottom: 8px !important;
+  flex-wrap: wrap !important;
   font-family: system-ui !important;
-  margin-bottom: 10px !important;
-  box-sizing: border-box !important;
-}
-.langlua-pronounce-btn:hover {
-  background: rgba(108,99,255,0.3) !important;
 }
 
-/* Word display */
-.langlua-original {
-  color: #5A5A80 !important;
+.ll-original {
   font-size: 11px !important;
-  display: block !important;
+  color: #94a3b8 !important;
   font-family: system-ui !important;
-  line-height: 1.4 !important;
 }
-.langlua-translation {
-  font-size: 20px !important;
+
+.ll-arrow {
+  font-size: 11px !important;
+  color: #475569 !important;
+  font-family: system-ui !important;
+}
+
+.ll-translation {
+  font-size: 16px !important;
   font-weight: 700 !important;
-  color: #A89BFF !important;
-  display: block !important;
-  margin: 4px 0 10px !important;
+  color: #38bdf8 !important;
   font-family: system-ui !important;
-  line-height: 1.3 !important;
+  flex: 1 !important;
 }
 
-/* Divider */
-.langlua-divider {
-  height: 1px !important;
-  background: #2E2E50 !important;
-  margin: 10px 0 !important;
-  display: block !important;
-  border: none !important;
+.ll-lang-badge {
+  font-size: 10px !important;
+  color: #38bdf8 !important;
+  background: rgba(56, 189, 248, 0.1) !important;
+  border: 1px solid rgba(56, 189, 248, 0.22) !important;
+  border-radius: 4px !important;
+  padding: 1px 5px !important;
+  font-family: system-ui !important;
+  letter-spacing: 0.03em !important;
 }
 
-/* Quiz section */
-.langlua-quiz-label {
-  font-size: 11px !important;
-  color: #9D9DC0 !important;
-  display: block !important;
-  margin-bottom: 6px !important;
-  font-family: system-ui !important;
-}
-.langlua-quiz-input {
+.ll-play-btn {
   all: initial !important;
-  width: 100% !important;
-  padding: 8px 10px !important;
-  background: #252540 !important;
-  border: 1px solid #2E2E50 !important;
-  border-radius: 8px !important;
-  color: #F0EEFF !important;
-  font-size: 13px !important;
+  cursor: pointer !important;
+  font-size: 14px !important;
+  opacity: 0.7 !important;
+  transition: opacity 100ms ease !important;
+  margin-left: auto !important;
+  line-height: 1 !important;
+}
+
+.ll-play-btn:hover {
+  opacity: 1 !important;
+}
+
+/* ── Context sentence ────────────────────────────────────────────────────── */
+.ll-context {
+  font-size: 11px !important;
+  color: #475569 !important;
+  font-style: italic !important;
+  line-height: 1.4 !important;
+  margin-bottom: 8px !important;
   font-family: system-ui !important;
+  overflow: hidden !important;
+  display: -webkit-box !important;
+  -webkit-line-clamp: 2 !important;
+  -webkit-box-orient: vertical !important;
+}
+
+/* ── Divider ─────────────────────────────────────────────────────────────── */
+.ll-divider {
+  height: 1px !important;
+  background: rgba(51, 65, 85, 0.7) !important;
+  margin: 8px 0 !important;
+  display: block !important;
+}
+
+/* ── Quiz / Try Out label ────────────────────────────────────────────────── */
+.ll-quiz-label {
+  font-size: 11px !important;
+  color: #94a3b8 !important;
+  margin-bottom: 6px !important;
+  display: block !important;
+  font-family: system-ui !important;
+}
+
+/* ── Guess input ─────────────────────────────────────────────────────────── */
+.ll-input {
+  all: initial !important;
+  display: block !important;
+  width: 100% !important;
+  padding: 7px 10px !important;
+  background: rgba(30, 41, 59, 0.9) !important;
+  border: 1px solid rgba(51, 65, 85, 0.9) !important;
+  border-radius: 8px !important;
+  color: #e2e8f0 !important;
+  font-size: 13px !important;
+  font-family: system-ui, -apple-system, sans-serif !important;
   box-sizing: border-box !important;
   margin-bottom: 8px !important;
-  display: block !important;
   outline: none !important;
+  caret-color: #6C63FF !important;
+  user-select: text !important;
 }
-.langlua-quiz-input:focus {
-  border-color: #6C63FF !important;
+
+.ll-input:focus {
+  border-color: rgba(56, 189, 248, 0.6) !important;
 }
-.langlua-submit-btn {
+
+/* ── Button row ──────────────────────────────────────────────────────────── */
+.ll-btn-row {
+  display: flex !important;
+  gap: 6px !important;
+  margin-bottom: 0 !important;
+}
+
+.ll-btn-primary {
   all: initial !important;
-  display: block !important;
-  width: 100% !important;
-  padding: 8px !important;
+  flex: 1 !important;
+  padding: 7px 0 !important;
   text-align: center !important;
-  background: #6C63FF !important;
+  background: #0ea5e9 !important;
   color: white !important;
   border-radius: 9999px !important;
-  font-size: 13px !important;
+  font-size: 12px !important;
   font-weight: 600 !important;
   cursor: pointer !important;
   font-family: system-ui !important;
   box-sizing: border-box !important;
-  transition: background 150ms ease !important;
-}
-.langlua-submit-btn:hover { background: #4B44CC !important; }
-.langlua-submit-btn:active { transform: scale(0.97) !important; }
-
-/* Feedback states */
-.langlua-correct {
-  color: #06D6A0 !important;
-  font-size: 13px !important;
-  font-weight: 600 !important;
-  display: block !important;
-  margin-top: 8px !important;
-  font-family: system-ui !important;
-  animation: langlua-fade-in 300ms ease !important;
-}
-.langlua-wrong {
-  color: #EF476F !important;
-  font-size: 13px !important;
-  display: block !important;
-  margin-top: 8px !important;
-  font-family: system-ui !important;
-  animation: langlua-shake 400ms ease !important;
+  transition: background 120ms ease !important;
 }
 
-/* Definition fallback button */
-.langlua-definition-btn {
+.ll-btn-primary:hover {
+  background: #0284c7 !important;
+}
+
+.ll-btn-primary:active {
+  transform: scale(0.97) !important;
+}
+
+.ll-btn-ghost {
   all: initial !important;
-  display: block !important;
-  margin-top: 8px !important;
-  color: #6C63FF !important;
+  flex: 1 !important;
+  padding: 7px 0 !important;
+  text-align: center !important;
+  background: transparent !important;
+  color: #64748b !important;
+  border: 1px solid rgba(51, 65, 85, 0.8) !important;
+  border-radius: 9999px !important;
   font-size: 12px !important;
+  cursor: pointer !important;
+  font-family: system-ui !important;
+  box-sizing: border-box !important;
+  transition: color 120ms ease, border-color 120ms ease !important;
+}
+
+.ll-btn-ghost:hover {
+  color: #e2e8f0 !important;
+  border-color: #475569 !important;
+}
+
+/* ── Feedback ────────────────────────────────────────────────────────────── */
+.ll-feedback {
+  min-height: 18px !important;
+  margin-top: 6px !important;
+  font-family: system-ui !important;
+  font-size: 12px !important;
+}
+
+.ll-correct {
+  color: #06D6A0 !important;
+  font-weight: 600 !important;
+  animation: langlua-appear 200ms ease !important;
+}
+
+.ll-wrong {
+  color: #EF476F !important;
+  animation: langlua-shake 380ms ease !important;
+}
+
+.ll-checking {
+  color: #5A5A80 !important;
+}
+
+.ll-reveal {
+  display: block !important;
+  margin-top: 4px !important;
+  font-size: 15px !important;
+  font-weight: 700 !important;
+  color: #38bdf8 !important;
+}
+
+/* ── Definition (lazy) ───────────────────────────────────────────────────── */
+.ll-def-link {
+  all: initial !important;
+  color: rgba(56, 189, 248, 0.75) !important;
+  font-size: 11px !important;
   cursor: pointer !important;
   font-family: system-ui !important;
   text-decoration: underline !important;
-}
-.langlua-definition-text {
-  font-size: 12px !important;
-  color: #9D9DC0 !important;
-  margin-top: 8px !important;
-  display: block !important;
-  font-style: italic !important;
-  font-family: system-ui !important;
-  line-height: 1.5 !important;
+  text-underline-offset: 2px !important;
+  transition: color 100ms ease !important;
 }
 
-/* Animations */
-@keyframes langlua-fade-in {
-  from { opacity: 0; transform: translateY(-4px); }
-  to   { opacity: 1; transform: translateY(0); }
+.ll-def-link:hover {
+  color: #38bdf8 !important;
 }
+
+.ll-def-text {
+  font-size: 11px !important;
+  color: #64748b !important;
+  margin-top: 6px !important;
+  line-height: 1.5 !important;
+  font-style: italic !important;
+  font-family: system-ui !important;
+  display: block !important;
+}
+
+.ll-def-credit {
+  color: #06D6A0 !important;
+  font-size: 10px !important;
+  font-style: normal !important;
+  margin-left: 4px !important;
+}
+
+/* ── Animations ──────────────────────────────────────────────────────────── */
 @keyframes langlua-shake {
-  0%,100% { transform: translateX(0); }
-  20%      { transform: translateX(-6px); }
-  40%      { transform: translateX(6px); }
-  60%      { transform: translateX(-4px); }
-  80%      { transform: translateX(4px); }
+
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+
+  20% {
+    transform: translateX(-5px);
+  }
+
+  40% {
+    transform: translateX(5px);
+  }
+
+  60% {
+    transform: translateX(-3px);
+  }
+
+  80% {
+    transform: translateX(3px);
+  }
 }

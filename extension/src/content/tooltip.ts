@@ -1,77 +1,183 @@
 import { playPronunciation } from '../services/elevenLabsService';
-import { checkGuess, getDefinition } from '../services/geminiService';
+import { checkGuess, getDefinition } from '../services/translationService';
 
-export const createTooltip = (word: string, translation: string, uid: string) => {
-  let tooltip = document.getElementById('langlua-tooltip-container');
-  if (!tooltip) {
-    tooltip = document.createElement('div');
-    tooltip.id = 'langlua-tooltip-container';
-    tooltip.className = 'langlua-tooltip';
-    document.body.appendChild(tooltip);
+let currentTooltip: HTMLElement | null = null;
+let hideTimer: ReturnType<typeof setTimeout> | null = null;
+
+export function buildTooltip(
+  anchor: HTMLElement,
+  original: string,
+  translation: string,
+  lang: string,
+  context: string,
+  tryOutMode: boolean,
+  uid: string,
+) {
+  removeTip();
+
+  const tip = document.createElement('div');
+  tip.className    = 'langlua-tooltip';
+  tip.id           = 'langlua-tooltip-container';
+
+  const langLabel  = lang.toUpperCase();
+  const contextSnip = context
+    ? `<div class="ll-context">${escHtml(context)}</div><div class="ll-divider"></div>`
+    : '';
+
+  if (tryOutMode) {
+    tip.innerHTML = `
+      <div class="ll-header">
+        <span class="ll-original">${escHtml(original)}</span>
+        <span class="ll-arrow">→</span>
+        <span class="ll-lang-badge">${langLabel}</span>
+      </div>
+      ${contextSnip}
+      <div class="ll-quiz-label">💬 What is this in ${langLabel}?</div>
+      <input id="ll-guess" class="ll-input" type="text" placeholder="Type your guess…" autocomplete="off" />
+      <div class="ll-btn-row">
+        <button id="ll-check" class="ll-btn-primary">Check →</button>
+        <button id="ll-skip" class="ll-btn-ghost">Skip +1 🪙</button>
+      </div>
+      <div id="ll-feedback" class="ll-feedback"></div>
+    `;
+  } else {
+    tip.innerHTML = `
+      <div class="ll-header">
+        <span class="ll-original">${escHtml(original)}</span>
+        <span class="ll-arrow">→</span>
+        <span class="ll-translation">${escHtml(translation)}</span>
+        <button id="ll-play" class="ll-play-btn" title="Pronounce">🔊</button>
+      </div>
+      ${contextSnip}
+      <div class="ll-quiz-label">💡 What do you think it means?</div>
+      <input id="ll-guess" class="ll-input" type="text" placeholder="Type guess…" autocomplete="off" />
+      <div class="ll-btn-row">
+        <button id="ll-check" class="ll-btn-primary">Check</button>
+        <button id="ll-skip" class="ll-btn-ghost">Skip +1 🪙</button>
+      </div>
+      <div id="ll-feedback" class="ll-feedback"></div>
+      <div class="ll-divider"></div>
+      <button id="ll-def-btn" class="ll-def-link">Show full definition</button>
+      <div id="ll-def-text" class="ll-def-text"></div>
+    `;
   }
 
-  tooltip.innerHTML = `
-    <button id="langlua-play" class="langlua-pronounce-btn">🔊 Listen</button>
-    <div class="langlua-original">Original: ${word}</div>
-    <div class="langlua-translation">${translation}</div>
-    <hr class="langlua-divider">
-    <div class="langlua-quiz-label">💡 What do you think it means?</div>
-    <input type="text" id="langlua-guess" class="langlua-quiz-input" placeholder="Type guess..." />
-    <button id="langlua-submit" class="langlua-submit-btn">Submit</button>
-    <div id="langlua-feedback"></div>
-    <hr class="langlua-divider">
-    <button id="langlua-def" class="langlua-definition-btn">Show Definition</button>
-    <div id="langlua-def-text" class="langlua-definition-text"></div>
-  `;
+  document.body.appendChild(tip);
+  positionTip(tip, anchor);
+  currentTooltip = tip;
 
-  document.getElementById('langlua-play')?.addEventListener('click', () => {
+  // Close on outside click
+  setTimeout(() => {
+    document.addEventListener('click', outsideClick, { capture: true, once: true });
+  }, 0);
+
+  // Pronounce button
+  tip.querySelector<HTMLButtonElement>('#ll-play')?.addEventListener('click', (e) => {
+    e.stopPropagation();
     playPronunciation(translation);
   });
 
-  document.getElementById('langlua-submit')?.addEventListener('click', async () => {
-    const guess = (document.getElementById('langlua-guess') as HTMLInputElement).value;
-    const feedback = document.getElementById('langlua-feedback');
-    if (!guess.trim() || !feedback) return;
-    
-    feedback.innerText = 'Checking...';
-    feedback.className = '';
-    const isCorrect = await checkGuess(word, guess);
-    
-    if (isCorrect) {
-      feedback.innerText = '✅ Correct! +10 🪙';
-      feedback.className = 'langlua-correct';
-      chrome.runtime.sendMessage({ type: "ADD_CREDITS", uid, amount: 10 });
+  // Guess / check
+  const guessInput = tip.querySelector<HTMLInputElement>('#ll-guess')!;
+  guessInput?.focus();
+
+  const showFeedback = (correct: boolean, revealedTranslation?: string) => {
+    const fb = tip.querySelector<HTMLElement>('#ll-feedback')!;
+    if (correct) {
+      fb.innerHTML = `<span class="ll-correct">✅ Correct! +15 🪙</span>`;
+      chrome.runtime.sendMessage({ type: 'ADD_CREDITS', uid, amount: 15 });
+      if (tryOutMode && revealedTranslation) {
+        fb.innerHTML += `<br><span class="ll-reveal">${escHtml(revealedTranslation)}</span>`;
+      }
     } else {
-      feedback.innerText = '❌ Not quite.';
-      feedback.className = 'langlua-wrong';
+      fb.innerHTML = `<span class="ll-wrong">❌ Not quite. +2 🪙</span>`;
+      chrome.runtime.sendMessage({ type: 'ADD_CREDITS', uid, amount: 2 });
+      if (revealedTranslation) {
+        fb.innerHTML += `<br><span class="ll-reveal">${escHtml(revealedTranslation)}</span>`;
+      }
     }
+  };
+
+  const doCheck = async () => {
+    const guess = guessInput.value.trim();
+    if (!guess) return;
+    const fb = tip.querySelector<HTMLElement>('#ll-feedback')!;
+    fb.innerHTML = '<span class="ll-checking">Checking…</span>';
+    const correct = await checkGuess(original, guess);
+    showFeedback(correct, translation);
+  };
+
+  tip.querySelector('#ll-check')?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    doCheck();
+  });
+  guessInput?.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') doCheck();
+    e.stopPropagation();
   });
 
-  document.getElementById('langlua-def')?.addEventListener('click', async () => {
-    const text = document.getElementById('langlua-def-text');
-    if (!text) return;
-    text.innerText = 'Loading...';
-    try {
-      const def = await getDefinition(word);
-      text.innerHTML = `<div>${def}</div><div style="font-size:10px; color:#4caf50; margin-top:4px;">Defined! +1 🪙</div>`;
-      chrome.runtime.sendMessage({ type: "ADD_CREDITS", uid, amount: 1 });
-    } catch(e) {
-      text.innerText = 'Failed to load.';
-    }
+  tip.querySelector('#ll-skip')?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    chrome.runtime.sendMessage({ type: 'ADD_CREDITS', uid, amount: 1 });
+    removeTip();
   });
 
-  return tooltip;
-};
+  // Lazy definition (normal mode only)
+  tip.querySelector('#ll-def-btn')?.addEventListener('click', async (e) => {
+    e.stopPropagation();
+    const defText = tip.querySelector<HTMLElement>('#ll-def-text')!;
+    defText.innerHTML = '<span class="ll-checking">Loading…</span>';
+    const def = await getDefinition(original, context);
+    defText.innerHTML = `<span>${escHtml(def)}</span><span class="ll-def-credit"> +1 🪙</span>`;
+    chrome.runtime.sendMessage({ type: 'ADD_CREDITS', uid, amount: 1 });
+  });
 
-export const positionTooltip = (tooltip: HTMLElement, rect: DOMRect) => {
-  tooltip.style.left = `${rect.left + window.scrollX}px`;
-  tooltip.style.top = `${rect.bottom + window.scrollY + 8}px`;
-  tooltip.style.display = 'block';
-};
+  // Keep tooltip alive while mouse is inside it
+  tip.addEventListener('mouseenter', () => {
+    if (hideTimer) { clearTimeout(hideTimer); hideTimer = null; }
+  });
+  tip.addEventListener('mouseleave', () => {
+    hideTimer = setTimeout(removeTip, 300);
+  });
+}
 
-export const hideTooltip = () => {
-  const tooltip = document.getElementById('langlua-tooltip-container');
-  if (tooltip) {
-    tooltip.style.display = 'none';
+function positionTip(tip: HTMLElement, anchor: HTMLElement) {
+  const rect = anchor.getBoundingClientRect();
+  const vw   = window.innerWidth;
+  const vh   = window.innerHeight;
+
+  let top  = rect.bottom + 8;
+  let left = rect.left;
+
+  // Keep within viewport horizontally
+  if (left + 280 > vw - 8) left = vw - 280 - 8;
+  if (left < 8) left = 8;
+
+  // Flip above if not enough room below
+  if (top + 260 > vh && rect.top - 260 > 0) top = rect.top - 260;
+
+  tip.style.left = `${left}px`;
+  tip.style.top  = `${top}px`;
+}
+
+function outsideClick(e: MouseEvent) {
+  const t = e.target as Node;
+  if (currentTooltip && !currentTooltip.contains(t)) {
+    removeTip();
   }
-};
+}
+
+export function removeTip() {
+  if (currentTooltip) {
+    currentTooltip.remove();
+    currentTooltip = null;
+  }
+  if (hideTimer) { clearTimeout(hideTimer); hideTimer = null; }
+}
+
+// Keep existing export name for callers that use hideTooltip
+export { removeTip as hideTooltip };
+
+function escHtml(s: string): string {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
