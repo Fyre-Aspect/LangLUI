@@ -1,6 +1,5 @@
-import { translateWords } from '../services/translationService';
+import { translateWords, checkGuess, getDefinition } from '../services/translationService';
 import { fetchAudioDataUri } from '../services/elevenLabsService';
-import { getDefinition, checkGuess } from '../services/geminiService';
 
 const DEFAULT_PREFS = { targetLanguage: "ja", intensity: 5 };
 
@@ -32,7 +31,7 @@ chrome.runtime.onMessage.addListener((request: any, sender: any, sendResponse: a
   }
 
   if (request.type === "GET_DEFINITION") {
-    getDefinition(request.word).then(sendResponse);
+    getDefinition(request.word, request.context).then(sendResponse);
     return true;
   }
 

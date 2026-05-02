@@ -3,7 +3,6 @@ import { COMMON_TRANSLATIONS } from '../utils/wordSelector';
 declare const GEMINI_API_KEY: string;
 
 const FLASH = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`;
-const PRO = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro-preview-05-06:generateContent?key=${GEMINI_API_KEY}`;
 
 const LANG_NAMES: Record<string, string> = {
   ja: 'Japanese', es: 'Spanish', fr: 'French', de: 'German',
@@ -11,37 +10,37 @@ const LANG_NAMES: Record<string, string> = {
   ar: 'Arabic', hi: 'Hindi',
 };
 
-// Per-word persistent cache — key: `t__${word}__${lang}`, value: translation string
 const CACHE_TTL_MS = 30 * 24 * 60 * 60 * 1000; // 30 days
 
-// ── BULK TRANSLATION (Flash — cheap + fast) ───────────────────────────────────
 export async function translateWords(
   words: string[], lang: string
 ): Promise<Record<string, string>> {
   const result: Record<string, string> = {};
   if (!words.length) return result;
 
-  // 1. Local COMMON_TRANSLATIONS dict — zero API cost
+  // 1. Local COMMON_TRANSLATIONS dict
   const afterCommon: string[] = [];
   for (const w of words) {
-    const hit = COMMON_TRANSLATIONS[w.toLowerCase()]?.[lang];
-    if (hit) { result[w] = hit; }
+    const lower = w.toLowerCase();
+    const hit = COMMON_TRANSLATIONS[lower]?.[lang];
+    if (hit) { result[lower] = hit; }
     else { afterCommon.push(w); }
   }
 
   if (!afterCommon.length) return result;
 
-  // 2. Batch read from chrome.storage.local — ONE call for all words
-  const keys = afterCommon.map(w => `t__${w}__${lang}`);
+  // 2. Batch read from chrome.storage.local
+  const keys = afterCommon.map(w => `t__${w.toLowerCase()}__${lang}`);
   const cached: Record<string, { v: string; ts: number }> = await new Promise(res =>
     chrome.storage.local.get(keys, res as any)
   );
 
   const uncached: string[] = [];
   for (const w of afterCommon) {
-    const entry = cached[`t__${w}__${lang}`];
+    const lower = w.toLowerCase();
+    const entry = cached[`t__${lower}__${lang}`];
     if (entry?.v && Date.now() - entry.ts < CACHE_TTL_MS) {
-      result[w] = entry.v;
+      result[lower] = entry.v;
     } else {
       uncached.push(w);
     }
@@ -49,9 +48,9 @@ export async function translateWords(
 
   if (!uncached.length) return result;
 
-  // 3. Call Gemini Flash for uncached words — token-minimal prompt
+  // 3. Call Gemini Flash for uncached words
   const langName = LANG_NAMES[lang] ?? lang;
-  const prompt = `Translate to ${langName}. Reply ONLY with minified JSON {"word":"translation"}. No spaces. No newlines. No markdown. Words:${JSON.stringify(uncached)}`;
+  const prompt = `Translate these English words to ${langName}. Reply ONLY with minified JSON object {"english_word":"translation"}. No markdown, no extra text. Words: ${JSON.stringify(uncached)}`;
 
   try {
     const resp = await fetch(FLASH, {
@@ -59,7 +58,7 @@ export async function translateWords(
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         contents: [{ parts: [{ text: prompt }] }],
-        generationConfig: { temperature: 0.05, maxOutputTokens: 512 },
+        generationConfig: { temperature: 0.1, maxOutputTokens: 1024 },
       }),
     });
 
@@ -68,34 +67,61 @@ export async function translateWords(
       return result;
     }
 
-    console.log(`[LangLua] Calling Gemini for ${uncached.length} uncached words`);
+    const data = await resp.json();
+    const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '{}';
+    const cleanText = text.replace(/```json/g, '').replace(/```/g, '').trim();
+    const parsed = JSON.parse(cleanText);
 
-    const ai = new GoogleGenAI({ apiKey: GEMINI_API_KEY });
-    const prompt = `Translate to ${targetLanguage} as JSON {word:translation}: ${JSON.stringify(uncached)}`;
-
-    try {
-      const response = await ai.models.generateContent({
-        model: 'gemini-2.5-flash',
-        contents: prompt,
-      });
-
-      let resultText = response.text || '{}';
-      resultText = resultText.replace(/```json/g, '').replace(/```/g, '').trim();
-      const parsed = JSON.parse(resultText);
-
-      // Save each word to cache individually and merge into result
-      const cacheUpdates: Record<string, any> = {};
-      for (const key in parsed) {
-        const lower = key.toLowerCase();
-        const translation = parsed[key];
-        result[lower] = translation;
-        cacheUpdates[`${CACHE_KEY_PREFIX}${targetLanguage}_${lower}`] = { t: translation, ts: Date.now() };
-      }
-      await chrome.storage.local.set(cacheUpdates);
-
-      return result;
-    } catch (error) {
-      console.error('Translation error', error);
-      return result; // return whatever we got from cache at least
+    const cacheUpdates: Record<string, any> = {};
+    for (const [w, t] of Object.entries(parsed)) {
+      const lower = w.toLowerCase();
+      const translation = t as string;
+      result[lower] = translation;
+      cacheUpdates[`t__${lower}__${lang}`] = { v: translation, ts: Date.now() };
     }
+    
+    await chrome.storage.local.set(cacheUpdates);
+    return result;
+  } catch (error) {
+    console.error('[LangLua] Translation error:', error);
+    return result;
   }
+}
+
+export async function checkGuess(original: string, guess: string): Promise<boolean> {
+  const prompt = `Is "${guess}" a reasonably correct translation or meaning for the English word "${original}"? Reply with ONLY "YES" or "NO".`;
+  try {
+    const resp = await fetch(FLASH, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: prompt }] }],
+        generationConfig: { temperature: 0, maxOutputTokens: 10 },
+      }),
+    });
+    const data = await resp.json();
+    const text = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim().toUpperCase() || '';
+    return text.includes('YES');
+  } catch {
+    return false;
+  }
+}
+
+export async function getDefinition(original: string, context?: string): Promise<string> {
+  const ctxPart = context ? ` used in the context: "${context}"` : '';
+  const prompt = `Give a very short, 1-sentence definition for the English word "${original}"${ctxPart}.`;
+  try {
+    const resp = await fetch(FLASH, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: prompt }] }],
+        generationConfig: { temperature: 0.3, maxOutputTokens: 100 },
+      }),
+    });
+    const data = await resp.json();
+    return data.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || 'No definition found.';
+  } catch {
+    return 'Error loading definition.';
+  }
+}

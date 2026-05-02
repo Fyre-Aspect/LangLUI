@@ -1,136 +1,121 @@
 import { selectWords } from '../utils/wordSelector';
-import { createTooltip, positionTooltip, hideTooltip } from './tooltip';
+import { buildTooltip, hideTooltip } from './tooltip';
 
 const init = async () => {
   try {
     console.log('[LangLua] content script init started');
 
-    const storageObj = await chrome.storage.local.get(['uid', 'isActive']) as { uid: string, isActive?: boolean };
-    console.log('[LangLua] storage:', JSON.stringify(storageObj));
-
-    uid = store.uid ?? '';
+    const store = await chrome.storage.local.get(['uid', 'isActive', 'targetLanguage', 'intensity', 'tryOutMode']);
+    const uid = (store.uid as string) || '';
     if (!uid) { console.log('[LangLua] not signed in'); return; }
     if (store.isActive === false) { console.log('[LangLua] inactive'); return; }
 
-    lang = store.targetLanguage ?? 'ja';
-    intensity = store.intensity ?? 5;
-    tryOutMode = store.tryOutMode ?? false;
+    const lang = (store.targetLanguage as string) || 'ja';
+    const intensity = (store.intensity as number) || 5;
+    const tryOutMode = (store.tryOutMode as boolean) || false;
 
-    console.log('[LangLua] prefs response:', JSON.stringify(response));
-
-    const prefs = response as { targetLanguage: string; intensity: number; error?: string };
-    if (!response || prefs.error || !prefs.targetLanguage) {
-      console.log('[LangLua] Bad prefs, aborting:', prefs);
-      return;
-    }
-
-    const { words, wordNodes } = selectWords(prefs.intensity);
-    console.log('[LangLua] selected words count:', words.length, words.slice(0, 10));
-
+    const { words, nodeMap, contextFor } = selectWords(intensity);
     if (words.length === 0) {
       console.log('[LangLua] No words selected, aborting.');
       return;
     }
 
-    const rawTranslations = await new Promise<Record<string, string>>((resolve) => {
-      chrome.runtime.sendMessage({ type: "TRANSLATE_WORDS", words, targetLanguage: prefs.targetLanguage }, resolve);
+    const translations = await new Promise<Record<string, string>>((resolve) => {
+      chrome.runtime.sendMessage({ 
+        type: "TRANSLATE_WORDS", 
+        words: Array.from(new Set(words)), 
+        targetLanguage: lang 
+      }, (resp) => resolve(resp || {}));
     });
 
-    const translations: Record<string, string> = {};
-    if (rawTranslations) {
-      for (const [k, v] of Object.entries(rawTranslations)) {
-        translations[k.toLowerCase()] = v;
-      }
+    if (!translations || Object.keys(translations).length === 0) {
+      console.log('[LangLua] No translations received.');
+      return;
     }
 
-    // Get unique Text nodes that we found words in
     const uniqueNodes = new Set<Text>();
-    wordNodes.forEach(nodes => nodes.forEach(n => uniqueNodes.add(n)));
-    console.log('[LangLua] unique text nodes to process:', uniqueNodes.size);
+    nodeMap.forEach(nodes => nodes.forEach(n => uniqueNodes.add(n)));
 
     let replacedCount = 0;
 
-    // Iterate through all actual nodes
     uniqueNodes.forEach(node => {
       const text = node.nodeValue;
       const parent = node.parentNode;
       if (!text || !parent) return;
 
-      const regex = new RegExp(`\\b${word}\\b`, 'gi');
-      const matches = [...text.matchAll(regex)];
-      if (!matches.length) return;
+      // Find which words from our set are actually in THIS node
+      const wordsInNode = Array.from(nodeMap.keys()).filter((w: string) => 
+        new RegExp(`\\b${w}\\b`, 'gi').test(text)
+      );
+
+      if (wordsInNode.length === 0) return;
+
+      // Sort words by length descending to avoid partial matches
+      wordsInNode.sort((a: string, b: string) => b.length - a.length);
 
       const frag = document.createDocumentFragment();
-      let last = 0;
+      let lastIndex = 0;
 
-      for (const m of matches) {
-        const start = m.index!;
-        if (start > last) frag.appendChild(document.createTextNode(text.slice(last, start)));
+      // Simple regex approach for the whole node text
+      const pattern = wordsInNode.map(w => `\\b${w}\\b`).join('|');
+      const regex = new RegExp(pattern, 'gi');
+      
+      let match;
+      while ((match = regex.exec(text)) !== null) {
+        const matchedWord = match[0];
+        const lowerWord = matchedWord.toLowerCase();
+        const translation = (translations as Record<string, string>)[lowerWord];
+
+        if (!translation) continue;
+
+        // Add text before match
+        frag.appendChild(document.createTextNode(text.slice(lastIndex, match.index)));
 
         const span = document.createElement('span');
+        const wordContext = contextFor[lowerWord] || '';
 
         if (tryOutMode) {
           span.className = 'langlua-tryout';
-          span.textContent = m[0]; // keep original English
+          span.textContent = matchedWord;
           span.addEventListener('click', (e) => {
             e.stopPropagation();
-            buildTooltip(span, m[0], translation, lang, contextMap.get(word) ?? '', true, uid);
+            buildTooltip(span, matchedWord, translation, lang, wordContext, true, uid);
           });
         } else {
           span.className = 'langlua-word';
           span.textContent = translation;
-          span.dataset.original = m[0];
-          span.dataset.translation = translation;
-
-          const show = (e: MouseEvent) => {
-            console.log('[LangLua] Hover/Click on:', matchedWord);
-            const rect = span.getBoundingClientRect();
-            const tooltip = createTooltip(lowerWord, translation, uid);
-            positionTooltip(tooltip, rect);
-            console.log('[LangLua] Tooltip positioned at:', tooltip.style.left, tooltip.style.top);
-          };
-
-          span.addEventListener('mouseenter', show);
-          span.addEventListener('click', (e) => {
+          const show = (e: Event) => {
             e.stopPropagation();
-            show(e);
-          });
-
-          fragment.appendChild(span);
-          lastIndex = match.index + matchedWord.length;
-          replacedCount++;
+            buildTooltip(span, matchedWord, translation, lang, wordContext, false, uid);
+          };
+          span.addEventListener('mouseenter', show);
+          span.addEventListener('click', show);
         }
 
-        // Add any trailing text
-        if (lastIndex < text.length) {
-          fragment.appendChild(document.createTextNode(text.substring(lastIndex)));
-        }
+        frag.appendChild(span);
+        lastIndex = regex.lastIndex;
+        replacedCount++;
+      }
 
-        // Only replace if we actually modified something
-        if (lastIndex > 0) {
-          parent.replaceChild(fragment, node);
-        }
-      });
+      if (lastIndex > 0) {
+        frag.appendChild(document.createTextNode(text.slice(lastIndex)));
+        parent.replaceChild(frag, node);
+      }
+    });
 
-    console.log('[LangLua] done. Total words replaced on page:', replacedCount);
-    if (replacedCount > 0) {
-      console.log('[LangLua] SUCCESS: You should see highlighted words on the page. Hover or click them to see the tooltip.');
-    } else {
-      console.log('[LangLua] WARNING: No words were replaced. Check if translations were received or if words matched the page text.');
-    }
+    console.log('[LangLua] done. Total words replaced:', replacedCount);
 
     document.addEventListener('click', (e) => {
       const target = e.target as HTMLElement;
-      if (!target.closest('.langlua-tooltip') && !target.closest('.langlua-word')) {
+      if (!target.closest('.langlua-tooltip') && !target.closest('.langlua-word') && !target.closest('.langlua-tryout')) {
         hideTooltip();
       }
     });
   } catch (error) {
     console.error("[LangLua] content script error:", error);
   }
-});
+};
 
-// ── Bootstrap ─────────────────────────────────────────────────────────────────
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', init);
 } else {

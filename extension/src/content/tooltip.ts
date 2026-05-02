@@ -1,6 +1,3 @@
-import { playPronunciation } from '../services/elevenLabsService';
-import { checkGuess, getDefinition } from '../services/translationService';
-
 let currentTooltip: HTMLElement | null = null;
 let hideTimer: ReturnType<typeof setTimeout> | null = null;
 
@@ -74,7 +71,12 @@ export function buildTooltip(
   // Pronounce button
   tip.querySelector<HTMLButtonElement>('#ll-play')?.addEventListener('click', (e) => {
     e.stopPropagation();
-    playPronunciation(translation);
+    chrome.runtime.sendMessage({ type: 'FETCH_AUDIO', text: translation }, (dataUri) => {
+      if (dataUri) {
+        const audio = new Audio(dataUri);
+        audio.play();
+      }
+    });
   });
 
   // Guess / check
@@ -103,8 +105,10 @@ export function buildTooltip(
     if (!guess) return;
     const fb = tip.querySelector<HTMLElement>('#ll-feedback')!;
     fb.innerHTML = '<span class="ll-checking">Checking…</span>';
-    const correct = await checkGuess(original, guess);
-    showFeedback(correct, translation);
+    
+    chrome.runtime.sendMessage({ type: 'CHECK_GUESS', word: original, guess }, (correct) => {
+      showFeedback(correct, translation);
+    });
   };
 
   tip.querySelector('#ll-check')?.addEventListener('click', (e) => {
@@ -127,9 +131,11 @@ export function buildTooltip(
     e.stopPropagation();
     const defText = tip.querySelector<HTMLElement>('#ll-def-text')!;
     defText.innerHTML = '<span class="ll-checking">Loading…</span>';
-    const def = await getDefinition(original, context);
-    defText.innerHTML = `<span>${escHtml(def)}</span><span class="ll-def-credit"> +1 🪙</span>`;
-    chrome.runtime.sendMessage({ type: 'ADD_CREDITS', uid, amount: 1 });
+    
+    chrome.runtime.sendMessage({ type: 'GET_DEFINITION', word: original, context }, (def) => {
+      defText.innerHTML = `<span>${escHtml(def)}</span><span class="ll-def-credit"> +1 🪙</span>`;
+      chrome.runtime.sendMessage({ type: 'ADD_CREDITS', uid, amount: 1 });
+    });
   });
 
   // Keep tooltip alive while mouse is inside it
@@ -146,18 +152,21 @@ function positionTip(tip: HTMLElement, anchor: HTMLElement) {
   const vw   = window.innerWidth;
   const vh   = window.innerHeight;
 
-  let top  = rect.bottom + 8;
-  let left = rect.left;
+  let top  = rect.bottom + 8 + window.scrollY;
+  let left = rect.left + window.scrollX;
 
   // Keep within viewport horizontally
   if (left + 280 > vw - 8) left = vw - 280 - 8;
   if (left < 8) left = 8;
 
   // Flip above if not enough room below
-  if (top + 260 > vh && rect.top - 260 > 0) top = rect.top - 260;
+  if (rect.bottom + 260 > vh && rect.top - 260 > 0) {
+    top = rect.top - 260 + window.scrollY;
+  }
 
   tip.style.left = `${left}px`;
   tip.style.top  = `${top}px`;
+  tip.style.display = 'block';
 }
 
 function outsideClick(e: MouseEvent) {
@@ -175,7 +184,6 @@ export function removeTip() {
   if (hideTimer) { clearTimeout(hideTimer); hideTimer = null; }
 }
 
-// Keep existing export name for callers that use hideTooltip
 export { removeTip as hideTooltip };
 
 function escHtml(s: string): string {

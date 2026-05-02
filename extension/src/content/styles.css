@@ -1,28 +1,28 @@
 /* ── Replaced word on page ───────────────────────────────────────────────── */
 .langlua-word {
-  background: rgba(56, 189, 248, 0.15) !important;
-  border-bottom: 2px solid rgba(56, 189, 248, 0.7) !important;
-  border-radius: 3px !important;
-  padding: 0 3px !important;
-  color: #0ea5e9 !important;
+  background: rgba(59, 130, 246, 0.12) !important;
+  border-bottom: 2px solid rgba(59, 130, 246, 0.6) !important;
+  border-radius: 4px !important;
+  padding: 0 2px !important;
+  color: #2563eb !important;
   font: inherit !important;
   font-weight: 600 !important;
   cursor: help !important;
   display: inline !important;
   text-decoration: none !important;
   margin: 0 !important;
-  transition: background 120ms ease, border-color 120ms ease, color 120ms ease !important;
+  transition: all 120ms ease !important;
 }
 
 .langlua-word:hover {
-  background: rgba(56, 189, 248, 0.28) !important;
-  border-bottom-color: #0ea5e9 !important;
-  color: #38bdf8 !important;
+  background: rgba(59, 130, 246, 0.22) !important;
+  border-bottom-color: #2563eb !important;
+  color: #1d4ed8 !important;
 }
 
 /* ── Try Out mode — keeps original English, dotted sky-blue underline ─────── */
 .langlua-tryout {
-  border-bottom: 2px dashed rgba(56, 189, 248, 0.55) !important;
+  border-bottom: 2px dashed rgba(59, 130, 246, 0.45) !important;
   cursor: pointer !important;
   background: none !important;
   color: inherit !important;
@@ -35,7 +35,7 @@
 }
 
 .langlua-tryout:hover {
-  border-bottom-color: #38bdf8 !important;
+  border-bottom-color: #2563eb !important;
 }
 
 .langlua-tryout:hover {
@@ -48,17 +48,18 @@
   position: absolute !important;
   z-index: 2147483647 !important;
   width: 280px !important;
-  background: rgba(22, 28, 36, 0.97) !important;
-  backdrop-filter: blur(20px) saturate(160%) !important;
-  -webkit-backdrop-filter: blur(20px) saturate(160%) !important;
-  border: 1px solid rgba(56, 189, 248, 0.25) !important;
-  border-radius: 12px !important;
-  padding: 14px 16px !important;
-  font-family: system-ui, -apple-system, sans-serif !important;
+  background: rgba(255, 255, 255, 0.95) !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+  border: 1px solid #E2E8F0 !important;
+  border-radius: 16px !important;
+  padding: 16px !important;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif !important;
   font-size: 13px !important;
-  color: #e2e8f0 !important;
+  color: #1E293B !important;
   line-height: 1.5 !important;
   box-sizing: border-box !important;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1) !important;
   display: none;
   visibility: visible !important;
   opacity: 1 !important;
@@ -101,19 +102,19 @@
 .ll-translation {
   font-size: 16px !important;
   font-weight: 700 !important;
-  color: #38bdf8 !important;
-  font-family: system-ui !important;
+  color: #2563eb !important;
+  font-family: inherit !important;
   flex: 1 !important;
 }
 
 .ll-lang-badge {
   font-size: 10px !important;
-  color: #38bdf8 !important;
-  background: rgba(56, 189, 248, 0.1) !important;
-  border: 1px solid rgba(56, 189, 248, 0.22) !important;
+  color: #2563eb !important;
+  background: #DBEAFE !important;
+  border: 1px solid #BFDBFE !important;
   border-radius: 4px !important;
   padding: 1px 5px !important;
-  font-family: system-ui !important;
+  font-family: inherit !important;
   letter-spacing: 0.03em !important;
 }
 
@@ -148,7 +149,7 @@
 /* ── Divider ─────────────────────────────────────────────────────────────── */
 .ll-divider {
   height: 1px !important;
-  background: rgba(51, 65, 85, 0.7) !important;
+  background: #E2E8F0 !important;
   margin: 8px 0 !important;
   display: block !important;
 }
@@ -168,16 +169,16 @@
   display: block !important;
   width: 100% !important;
   padding: 7px 10px !important;
-  background: rgba(30, 41, 59, 0.9) !important;
-  border: 1px solid rgba(51, 65, 85, 0.9) !important;
+  background: #F1F5F9 !important;
+  border: 1px solid #CBD5E1 !important;
   border-radius: 8px !important;
-  color: #e2e8f0 !important;
+  color: #1E293B !important;
   font-size: 13px !important;
-  font-family: system-ui, -apple-system, sans-serif !important;
+  font-family: inherit !important;
   box-sizing: border-box !important;
   margin-bottom: 8px !important;
   outline: none !important;
-  caret-color: #6C63FF !important;
+  caret-color: #3B82F6 !important;
   user-select: text !important;
 }
 
@@ -197,19 +198,19 @@
   flex: 1 !important;
   padding: 7px 0 !important;
   text-align: center !important;
-  background: #0ea5e9 !important;
+  background: #3B82F6 !important;
   color: white !important;
   border-radius: 9999px !important;
   font-size: 12px !important;
   font-weight: 600 !important;
   cursor: pointer !important;
-  font-family: system-ui !important;
+  font-family: inherit !important;
   box-sizing: border-box !important;
   transition: background 120ms ease !important;
 }
 
 .ll-btn-primary:hover {
-  background: #0284c7 !important;
+  background: #2563EB !important;
 }
 
 .ll-btn-primary:active {
@@ -222,19 +223,19 @@
   padding: 7px 0 !important;
   text-align: center !important;
   background: transparent !important;
-  color: #64748b !important;
-  border: 1px solid rgba(51, 65, 85, 0.8) !important;
+  color: #64748B !important;
+  border: 1px solid #CBD5E1 !important;
   border-radius: 9999px !important;
   font-size: 12px !important;
   cursor: pointer !important;
-  font-family: system-ui !important;
+  font-family: inherit !important;
   box-sizing: border-box !important;
-  transition: color 120ms ease, border-color 120ms ease !important;
+  transition: all 120ms ease !important;
 }
 
 .ll-btn-ghost:hover {
-  color: #e2e8f0 !important;
-  border-color: #475569 !important;
+  color: #1E293B !important;
+  border-color: #94A3B8 !important;
 }
 
 /* ── Feedback ────────────────────────────────────────────────────────────── */
