@@ -1,16 +1,98 @@
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-body {
-  width: 340px;
-  font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
-  background: #0F0F1A;
-  color: #F0EEFF;
+html, body {
+  width: 420px;
+  margin: 0;
   padding: 0;
-  min-width: 340px;
-  max-width: 340px;
+  background: #0b0b14;
 }
 
-/* ── Header ── */
+body {
+  font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+  color: #F0EEFF;
+  display: flex;
+  justify-content: center;
+  padding: 24px;
+}
+
+/* ══════════════════════════════════════
+   BORDER GLOW CARD
+   ══════════════════════════════════════ */
+
+.border-glow-card {
+  --angle: 0deg;
+  position: relative;
+  width: 340px;
+  border-radius: 20px;
+  background: #14141f;
+  z-index: 0;
+  overflow: visible;
+}
+
+/* Animated gradient border via ::before */
+.border-glow-card::before {
+  content: "";
+  position: absolute;
+  inset: -2px;
+  border-radius: 22px;
+  background: conic-gradient(
+    from var(--angle),
+    #c084fc, #f472b6, #38bdf8, #c084fc
+  );
+  z-index: -2;
+  animation: border-spin 4s linear infinite;
+}
+
+/* Inner mask to carve out the card interior */
+.border-glow-card::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 20px;
+  background: #14141f;
+  z-index: -1;
+}
+
+/* Outer glow via box-shadow on the edge-light span */
+.border-glow-card > .edge-light {
+  position: absolute;
+  inset: -2px;
+  border-radius: 22px;
+  z-index: -3;
+  pointer-events: none;
+  box-shadow:
+    0 0 15px 2px rgba(192, 132, 252, 0.4),
+    0 0 30px 4px rgba(244, 114, 182, 0.25),
+    0 0 60px 8px rgba(56, 189, 248, 0.15);
+  animation: glow-pulse 4s ease-in-out infinite alternate;
+}
+
+@keyframes border-spin {
+  to { --angle: 360deg; }
+}
+
+@keyframes glow-pulse {
+  0%   { opacity: 0.6; }
+  100% { opacity: 1; }
+}
+
+/* Register the custom property so it can animate */
+@property --angle {
+  syntax: "<angle>";
+  initial-value: 0deg;
+  inherits: false;
+}
+
+.border-glow-inner {
+  position: relative;
+  z-index: 1;
+  border-radius: 20px;
+  overflow: hidden;
+}
+
+/* ══════════════════════════════════════
+   HEADER
+   ══════════════════════════════════════ */
 .header {
   display: flex;
   align-items: center;
@@ -26,7 +108,9 @@ body {
 }
 .logo span { color: #A89BFF; }
 
-/* ── Toggle switch ── */
+/* ══════════════════════════════════════
+   TOGGLE SWITCH
+   ══════════════════════════════════════ */
 .toggle-switch {
   position: relative;
   width: 44px;
@@ -60,7 +144,9 @@ body {
 }
 .toggle-switch input:checked ~ .toggle-thumb { transform: translateX(20px); }
 
-/* ── Settings row ── */
+/* ══════════════════════════════════════
+   SETTINGS ROW
+   ══════════════════════════════════════ */
 .settings-row {
   display: flex;
   align-items: center;
@@ -71,7 +157,9 @@ body {
   border-bottom: 1px solid #2E2E50;
 }
 
-/* ── Stat rows ── */
+/* ══════════════════════════════════════
+   STAT ROWS
+   ══════════════════════════════════════ */
 .stat-row {
   display: flex;
   align-items: center;
@@ -91,14 +179,18 @@ body {
   border-radius: 9999px;
 }
 
-/* ── Divider ── */
+/* ══════════════════════════════════════
+   DIVIDER
+   ══════════════════════════════════════ */
 .divider {
   height: 1px;
   background: #2E2E50;
   margin: 0;
 }
 
-/* ── Actions ── */
+/* ══════════════════════════════════════
+   ACTIONS
+   ══════════════════════════════════════ */
 .actions {
   padding: 12px 16px;
   display: flex;
@@ -106,7 +198,9 @@ body {
   gap: 8px;
 }
 
-/* ── Buttons ── */
+/* ══════════════════════════════════════
+   BUTTONS
+   ══════════════════════════════════════ */
 .btn {
   width: 100%;
   padding: 10px 16px;
@@ -134,7 +228,9 @@ body {
 }
 .btn-ghost:hover { color: #F0EEFF; border-color: #5A5A80; }
 
-/* ── Sign-in container ── */
+/* ══════════════════════════════════════
+   SIGN-IN CONTAINER
+   ══════════════════════════════════════ */
 .signin-container {
   padding: 28px 16px 20px;
   text-align: center;
@@ -156,5 +252,7 @@ body {
 }
 .app-link:hover { text-decoration: underline; }
 
-/* ── Utility ── */
+/* ══════════════════════════════════════
+   UTILITY
+   ══════════════════════════════════════ */
 .hidden { display: none !important; }

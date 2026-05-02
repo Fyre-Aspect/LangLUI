@@ -1,5 +1,3 @@
-import { playPronunciation } from '../services/elevenLabsService';
-import { checkGuess, getDefinition } from '../services/geminiService';
 
 export const createTooltip = (word: string, translation: string, uid: string) => {
   let tooltip = document.getElementById('langlua-tooltip-container');
@@ -24,8 +22,14 @@ export const createTooltip = (word: string, translation: string, uid: string) =>
     <div id="langlua-def-text" class="langlua-definition-text"></div>
   `;
 
-  document.getElementById('langlua-play')?.addEventListener('click', () => {
-    playPronunciation(translation);
+  document.getElementById('langlua-play')?.addEventListener('click', async () => {
+    const dataUri = await new Promise<string>((resolve) => {
+      chrome.runtime.sendMessage({ type: "FETCH_AUDIO", text: translation }, resolve);
+    });
+    if (dataUri) {
+      const audio = new Audio(dataUri);
+      audio.play();
+    }
   });
 
   document.getElementById('langlua-submit')?.addEventListener('click', async () => {
@@ -35,7 +39,9 @@ export const createTooltip = (word: string, translation: string, uid: string) =>
     
     feedback.innerText = 'Checking...';
     feedback.className = '';
-    const isCorrect = await checkGuess(word, guess);
+    const isCorrect = await new Promise<boolean>((resolve) => {
+      chrome.runtime.sendMessage({ type: "CHECK_GUESS", word, guess }, resolve);
+    });
     
     if (isCorrect) {
       feedback.innerText = '✅ Correct! +10 🪙';
@@ -52,7 +58,9 @@ export const createTooltip = (word: string, translation: string, uid: string) =>
     if (!text) return;
     text.innerText = 'Loading...';
     try {
-      const def = await getDefinition(word);
+      const def = await new Promise<string>((resolve) => {
+        chrome.runtime.sendMessage({ type: "GET_DEFINITION", word }, resolve);
+      });
       text.innerHTML = `<div>${def}</div><div style="font-size:10px; color:#4caf50; margin-top:4px;">Defined! +1 🪙</div>`;
       chrome.runtime.sendMessage({ type: "ADD_CREDITS", uid, amount: 1 });
     } catch(e) {

@@ -7,60 +7,67 @@
 </head>
 <body>
 
-  <!-- Signed-out state -->
-  <div id="unauth-view" class="hidden">
-    <div class="header">
-      <div class="logo">Lang<span>Lua</span></div>
-    </div>
-    <div class="signin-container">
-      <p class="tagline">Learn by Living the Web</p>
-      <button id="btn-login" class="btn btn-primary" style="display:flex;align-items:center;justify-content:center;gap:8px;">
-        <svg width="16" height="16" viewBox="0 0 18 18" fill="none">
-          <path fill="#fff" fill-opacity=".9" d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908C16.658 14.131 17.64 11.823 17.64 9.2z"/>
-          <path fill="#fff" fill-opacity=".75" d="M9 18c2.43 0 4.467-.806 5.956-2.184l-2.908-2.258c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18z"/>
-          <path fill="#fff" fill-opacity=".6" d="M3.964 10.707A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.707V4.961H.957A8.996 8.996 0 0 0 0 9c0 1.452.348 2.827.957 4.039l3.007-2.332z"/>
-          <path fill="#fff" fill-opacity=".85" d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.961L3.964 7.293C4.672 5.163 6.656 3.58 9 3.58z"/>
-        </svg>
-        Sign in with Google
-      </button>
-    </div>
-  </div>
+  <div id="border-glow-card" class="border-glow-card">
+    <span class="edge-light"></span>
+    <div class="border-glow-inner">
 
-  <!-- Signed-in state -->
-  <div id="auth-view" class="hidden">
-    <div class="header">
-      <div class="logo">Lang<span>Lua</span></div>
-      <label class="toggle-switch" title="Toggle word replacement">
-        <input type="checkbox" id="toggle-active" checked>
-        <div class="toggle-track"></div>
-        <div class="toggle-thumb"></div>
-      </label>
-    </div>
+      <!-- Signed-out state -->
+      <div id="unauth-view" class="hidden">
+        <div class="header">
+          <div class="logo">Lang<span>Lua</span></div>
+        </div>
+        <div class="signin-container">
+          <p class="tagline">Learn by Living the Web</p>
+          <button id="btn-login" class="btn btn-primary" style="display:flex;align-items:center;justify-content:center;gap:8px;">
+            <svg width="16" height="16" viewBox="0 0 18 18" fill="none">
+              <path fill="#fff" fill-opacity=".9" d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908C16.658 14.131 17.64 11.823 17.64 9.2z"/>
+              <path fill="#fff" fill-opacity=".75" d="M9 18c2.43 0 4.467-.806 5.956-2.184l-2.908-2.258c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18z"/>
+              <path fill="#fff" fill-opacity=".6" d="M3.964 10.707A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.707V4.961H.957A8.996 8.996 0 0 0 0 9c0 1.452.348 2.827.957 4.039l3.007-2.332z"/>
+              <path fill="#fff" fill-opacity=".85" d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.961L3.964 7.293C4.672 5.163 6.656 3.58 9 3.58z"/>
+            </svg>
+            Sign in with Google
+          </button>
+        </div>
+      </div>
 
-    <div class="settings-row" style="display:flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-      <select id="lang-select" style="background:#1b1b22; color:#fff; border:1px solid #333; border-radius:4px; padding:4px 8px; font-size:12px;">
-        <option value="es">🇪🇸 Spanish</option>
-        <option value="fr">🇫🇷 French</option>
-        <option value="hi">🇮🇳 Hindi</option>
-      </select>
-      <span style="font-size:12px;">Intensity: <strong id="intensity-lbl" style="color:#F0EEFF;">—</strong></span>
-    </div>
+      <!-- Signed-in state -->
+      <div id="auth-view" class="hidden">
+        <div class="header">
+          <div class="logo">Lang<span>Lua</span></div>
+          <label class="toggle-switch" title="Toggle word replacement">
+            <input type="checkbox" id="toggle-active" checked>
+            <div class="toggle-track"></div>
+            <div class="toggle-thumb"></div>
+          </label>
+        </div>
 
-    <div class="divider"></div>
+        <div class="settings-row" style="display:flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+          <select id="lang-select" style="background:#1b1b22; color:#fff; border:1px solid #333; border-radius:4px; padding:4px 8px; font-size:12px;">
+            <option value="es">🇪🇸 Spanish</option>
+            <option value="fr">🇫🇷 French</option>
+            <option value="hi">🇮🇳 Hindi</option>
+          </select>
+          <span style="font-size:12px;">Intensity: <strong id="intensity-lbl" style="color:#F0EEFF;">—</strong></span>
+        </div>
 
-    <div class="stat-row">
-      <span class="stat-label">🪙 Credits</span>
-      <span class="stat-value" id="credits-val">—</span>
-    </div>
-    <div class="stat-row">
-      <span class="stat-label">🔥 Streak</span>
-      <span class="stat-value" id="streak-val">—</span>
-    </div>
+        <div class="divider"></div>
 
-    <div class="divider"></div>
+        <div class="stat-row">
+          <span class="stat-label">🪙 Credits</span>
+          <span class="stat-value" id="credits-val">—</span>
+        </div>
+        <div class="stat-row">
+          <span class="stat-label">🔥 Streak</span>
+          <span class="stat-value" id="streak-val">—</span>
+        </div>
 
-    <div class="actions">
-      <button id="btn-logout" class="btn btn-ghost">Sign Out</button>
+        <div class="divider"></div>
+
+        <div class="actions">
+          <button id="btn-logout" class="btn btn-ghost">Sign Out</button>
+        </div>
+      </div>
+
     </div>
   </div>
 

@@ -1,5 +1,4 @@
 import { selectWords } from '../utils/wordSelector';
-import { translateWords } from '../services/translationService';
 import { createTooltip, positionTooltip, hideTooltip } from './tooltip';
 
 const init = async () => {
@@ -45,8 +44,16 @@ const init = async () => {
       return;
     }
 
-    const translations = await translateWords(words, prefs.targetLanguage);
-    console.log('[LangLua] translations received:', Object.keys(translations).length, translations);
+    const rawTranslations = await new Promise<Record<string, string>>((resolve) => {
+      chrome.runtime.sendMessage({ type: "TRANSLATE_WORDS", words, targetLanguage: prefs.targetLanguage }, resolve);
+    });
+
+    const translations: Record<string, string> = {};
+    if (rawTranslations) {
+      for (const [k, v] of Object.entries(rawTranslations)) {
+        translations[k.toLowerCase()] = v;
+      }
+    }
 
     // Get unique Text nodes that we found words in
     const uniqueNodes = new Set<Text>();

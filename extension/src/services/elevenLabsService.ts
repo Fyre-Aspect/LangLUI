@@ -1,4 +1,4 @@
-export const playPronunciation = async (text: string): Promise<void> => {
+export const fetchAudioDataUri = async (text: string): Promise<string> => {
   const url = `https://api.elevenlabs.io/v1/text-to-speech/${ELEVENLABS_VOICE_ID}`;
   try {
     const response = await fetch(url, {
@@ -17,11 +17,14 @@ export const playPronunciation = async (text: string): Promise<void> => {
     if (!response.ok) throw new Error("TTS failed");
 
     const blob = await response.blob();
-    const audioUrl = URL.createObjectURL(blob);
-    const audio = new Audio(audioUrl);
-    audio.onended = () => URL.revokeObjectURL(audioUrl);
-    await audio.play();
+    return await new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onloadend = () => resolve(reader.result as string);
+      reader.onerror = reject;
+      reader.readAsDataURL(blob);
+    });
   } catch (error) {
     console.error("Audio error", error);
+    return "";
   }
 };
