@@ -1,6 +1,6 @@
 import { initializeApp, getApps } from "firebase/app";
 import { getAuth, signInWithCredential, GoogleAuthProvider, signOut } from "firebase/auth";
-import { getFirestore, doc, getDoc } from "firebase/firestore";
+import { getFirestore, doc, getDoc, updateDoc } from "firebase/firestore";
 
 const firebaseConfig = {
   apiKey:            FIREBASE_API_KEY,
@@ -27,12 +27,25 @@ async function reloadAllTabs() {
 document.addEventListener("DOMContentLoaded", async () => {
   const unauthView   = document.getElementById("unauth-view");
   const authView     = document.getElementById("auth-view");
-  const langLbl      = document.getElementById("lang-lbl");
+  const langSelect   = document.getElementById("lang-select") as HTMLSelectElement;
   const intensityLbl = document.getElementById("intensity-lbl");
   const creditsVal   = document.getElementById("credits-val");
   const streakVal    = document.getElementById("streak-val");
+  const toggleActive = document.getElementById("toggle-active") as HTMLInputElement;
 
-  const storageObj = await chrome.storage.local.get(["uid"]) as { uid?: string };
+  const storageObj = await chrome.storage.local.get(["uid", "isActive"]) as { uid?: string, isActive?: boolean };
+
+  if (storageObj.isActive !== undefined && toggleActive) {
+    toggleActive.checked = storageObj.isActive;
+  }
+
+  if (toggleActive) {
+    toggleActive.addEventListener("change", async (e) => {
+      const isChecked = (e.target as HTMLInputElement).checked;
+      await chrome.storage.local.set({ isActive: isChecked });
+      await reloadAllTabs();
+    });
+  }
 
   if (storageObj.uid) {
     unauthView?.classList.add("hidden");
@@ -43,10 +56,18 @@ document.addEventListener("DOMContentLoaded", async () => {
       if (snap.exists()) {
         const data = snap.data();
         const lang = data.targetLanguage ?? "es";
-        const langNames: Record<string, string> = {
-          es: "🇪🇸 Spanish", fr: "🇫🇷 French", hi: "🇮🇳 Hindi",
-        };
-        if (langLbl)      langLbl.textContent      = langNames[lang] ?? lang.toUpperCase();
+        
+        if (langSelect) {
+          langSelect.value = lang;
+          langSelect.addEventListener("change", async (e) => {
+            const newLang = (e.target as HTMLSelectElement).value;
+            await updateDoc(doc(db, "users", storageObj.uid!), {
+              targetLanguage: newLang
+            });
+            await reloadAllTabs();
+          });
+        }
+        
         if (intensityLbl) intensityLbl.textContent  = String(data.intensity ?? 5);
         if (creditsVal)   creditsVal.textContent    = String(data.credits ?? 0);
         if (streakVal)    streakVal.textContent      = `${data.streak ?? 0} days`;

@@ -11,18 +11,17 @@ export const createTooltip = (word: string, translation: string, uid: string) =>
   }
 
   tooltip.innerHTML = `
-    <button id="langlua-play" class="langlua-tooltip-btn">🔊 Listen</button>
-    <hr>
-    <div style="font-size: 12px; color: #888;">Original: ${word}</div>
-    <div style="font-size: 24px; color: #A89BFF; margin: 4px 0;">${translation}</div>
-    <hr>
-    <div style="margin-bottom: 8px;">💡 What does it mean?</div>
-    <input type="text" id="langlua-guess" class="langlua-tooltip-input" placeholder="Type guess..." />
-    <button id="langlua-submit" class="langlua-tooltip-btn" style="width: 100%">Submit</button>
-    <div id="langlua-feedback" style="margin-top: 8px; color: #ffeb3b;"></div>
-    <hr>
-    <button id="langlua-def" class="langlua-tooltip-btn" style="background: #444;">Show Definition</button>
-    <div id="langlua-def-text" style="margin-top: 8px;"></div>
+    <button id="langlua-play" class="langlua-pronounce-btn">🔊 Listen</button>
+    <div class="langlua-original">Original: ${word}</div>
+    <div class="langlua-translation">${translation}</div>
+    <hr class="langlua-divider">
+    <div class="langlua-quiz-label">💡 What do you think it means?</div>
+    <input type="text" id="langlua-guess" class="langlua-quiz-input" placeholder="Type guess..." />
+    <button id="langlua-submit" class="langlua-submit-btn">Submit</button>
+    <div id="langlua-feedback"></div>
+    <hr class="langlua-divider">
+    <button id="langlua-def" class="langlua-definition-btn">Show Definition</button>
+    <div id="langlua-def-text" class="langlua-definition-text"></div>
   `;
 
   document.getElementById('langlua-play')?.addEventListener('click', () => {
@@ -35,15 +34,16 @@ export const createTooltip = (word: string, translation: string, uid: string) =>
     if (!guess.trim() || !feedback) return;
     
     feedback.innerText = 'Checking...';
+    feedback.className = '';
     const isCorrect = await checkGuess(word, guess);
     
     if (isCorrect) {
       feedback.innerText = '✅ Correct! +10 🪙';
-      feedback.style.color = '#4caf50';
+      feedback.className = 'langlua-correct';
       chrome.runtime.sendMessage({ type: "ADD_CREDITS", uid, amount: 10 });
     } else {
       feedback.innerText = '❌ Not quite.';
-      feedback.style.color = '#f44336';
+      feedback.className = 'langlua-wrong';
     }
   });
 

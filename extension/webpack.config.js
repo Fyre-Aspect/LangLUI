@@ -1,6 +1,7 @@
 const path = require('path');
 const webpack = require('webpack');
 const CopyWebpackPlugin = require('copy-webpack-plugin');
+require('dotenv').config();
 
 module.exports = {
   mode: 'development',
@@ -29,16 +30,16 @@ module.exports = {
   },
   plugins: [
     new webpack.DefinePlugin({
-      FIREBASE_API_KEY:             JSON.stringify('AIzaSyBeoK3maD-HOG_-KibN47AqzRUGxUhfW9c'),
-      FIREBASE_AUTH_DOMAIN:         JSON.stringify('langlua-f910b.firebaseapp.com'),
-      FIREBASE_PROJECT_ID:          JSON.stringify('langlua-f910b'),
-      FIREBASE_STORAGE_BUCKET:      JSON.stringify('langlua-f910b.firebasestorage.app'),
-      FIREBASE_MESSAGING_SENDER_ID: JSON.stringify('722900477082'),
-      FIREBASE_APP_ID:              JSON.stringify('1:722900477082:web:e35dfa96ebd3946636eb23'),
-      FIREBASE_MEASUREMENT_ID:      JSON.stringify('G-3HMGQRCZH2'),
-      GEMINI_API_KEY:               JSON.stringify('AIzaSyC0NDbA1GhusH5YHr2f4L7YhUMK5O94PyU'),
-      ELEVENLABS_API_KEY:           JSON.stringify('sk_8a7a2a8957bb806497506a635b22f970080797881992ea28'),
-      ELEVENLABS_VOICE_ID:          JSON.stringify('pNInz6obpgDQGcFmaJgB'),
+      FIREBASE_API_KEY:             JSON.stringify(process.env.FIREBASE_API_KEY),
+      FIREBASE_AUTH_DOMAIN:         JSON.stringify(process.env.FIREBASE_AUTH_DOMAIN),
+      FIREBASE_PROJECT_ID:          JSON.stringify(process.env.FIREBASE_PROJECT_ID),
+      FIREBASE_STORAGE_BUCKET:      JSON.stringify(process.env.FIREBASE_STORAGE_BUCKET),
+      FIREBASE_MESSAGING_SENDER_ID: JSON.stringify(process.env.FIREBASE_MESSAGING_SENDER_ID),
+      FIREBASE_APP_ID:              JSON.stringify(process.env.FIREBASE_APP_ID),
+      FIREBASE_MEASUREMENT_ID:      JSON.stringify(process.env.FIREBASE_MEASUREMENT_ID),
+      GEMINI_API_KEY:               JSON.stringify(process.env.GEMINI_API_KEY),
+      ELEVENLABS_API_KEY:           JSON.stringify(process.env.ELEVENLABS_API_KEY),
+      ELEVENLABS_VOICE_ID:          JSON.stringify(process.env.ELEVENLABS_VOICE_ID),
     }),
     new CopyWebpackPlugin({
       patterns: [

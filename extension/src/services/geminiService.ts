@@ -1,25 +1,26 @@
-const geminiUrl = () =>
-  `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`;
+import { GoogleGenAI } from '@google/genai';
 
 export const getDefinition = async (word: string): Promise<string> => {
+  const ai = new GoogleGenAI({ apiKey: GEMINI_API_KEY });
   const prompt = `Define the English word '${word}' in one or two simple sentences. Be concise. No formatting.`;
-  const response = await fetch(geminiUrl(), {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }),
+  
+  const response = await ai.models.generateContent({
+    model: 'gemini-2.5-flash',
+    contents: prompt,
   });
-  const data = await response.json();
-  return data.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || "";
+  
+  return response.text?.trim() || "";
 };
 
 export const checkGuess = async (word: string, guess: string): Promise<boolean> => {
+  const ai = new GoogleGenAI({ apiKey: GEMINI_API_KEY });
   const prompt = `Is '${guess}' an acceptable or correct definition of '${word}'? Be lenient — partial understanding counts. Reply with ONLY 'yes' or 'no'.`;
-  const response = await fetch(geminiUrl(), {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }),
+  
+  const response = await ai.models.generateContent({
+    model: 'gemini-2.5-flash',
+    contents: prompt,
   });
-  const data = await response.json();
-  const text = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim().toLowerCase() || "no";
+  
+  const text = response.text?.trim().toLowerCase() || "no";
   return text.includes("yes");
 };

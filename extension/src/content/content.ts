@@ -4,9 +4,10 @@ import { createTooltip, positionTooltip, hideTooltip } from './tooltip';
 
 const init = async () => {
   try {
-    const storageObj = await chrome.storage.local.get(['uid']) as { uid: string };
+    const storageObj = await chrome.storage.local.get(['uid', 'isActive']) as { uid: string, isActive?: boolean };
     const uid = storageObj.uid;
     if (!uid) return;
+    if (storageObj.isActive === false) return; // disable replacement if toggled off
 
     const response = await new Promise((resolve) => {
       chrome.runtime.sendMessage({ type: "GET_USER_PREFS", uid }, resolve);
@@ -20,44 +21,66 @@ const init = async () => {
 
     const translations = await translateWords(words, prefs.targetLanguage);
 
-    wordNodes.forEach((nodes, word) => {
-      const translation = translations[word];
-      if (!translation) return;
+    // Get unique Text nodes that we found words in
+    const uniqueNodes = new Set<Text>();
+    wordNodes.forEach(nodes => nodes.forEach(n => uniqueNodes.add(n)));
 
-      nodes.forEach(node => {
-        const text = node.nodeValue;
-        if (!text) return;
+    // Iterate through all actual nodes
+    uniqueNodes.forEach(node => {
+      const text = node.nodeValue;
+      const parent = node.parentNode;
+      if (!text || !parent) return;
 
-        const regex = new RegExp(`\\b${word}\\b`, 'gi');
-        if (!regex.test(text)) return;
+      // Check which translated words exist in this text node
+      const matchingWords = words.filter(word => 
+        translations[word] && new RegExp(`\\b${word}\\b`, 'gi').test(text)
+      );
 
+      if (matchingWords.length === 0) return;
+
+      // We will replace the text node by building a DocumentFragment
+      const fragment = document.createDocumentFragment();
+      let remainingText = text;
+
+      // A simple regex that matches ANY of the translated words
+      const combinedRegex = new RegExp(`\\b(${matchingWords.join('|')})\\b`, 'gi');
+      
+      let match;
+      let lastIndex = 0;
+
+      while ((match = combinedRegex.exec(text)) !== null) {
+        const matchedWord = match[0];
+        const lowerWord = matchedWord.toLowerCase();
+        const translation = translations[lowerWord];
+
+        // Add text leading up to the match
+        if (match.index > lastIndex) {
+          fragment.appendChild(document.createTextNode(text.substring(lastIndex, match.index)));
+        }
+
+        // Add the translated span
         const span = document.createElement('span');
         span.className = 'langlua-word';
-        span.dataset.original = word;
+        span.dataset.original = lowerWord;
         span.dataset.translation = translation;
         span.innerText = translation;
-
-        // Simplified replacement logic
-        const fragments = text.split(regex);
-        const parent = node.parentNode;
-        if (!parent) return;
-
-        fragments.forEach((frag, idx) => {
-          if (frag) {
-            parent.insertBefore(document.createTextNode(frag), node);
-          }
-          if (idx < fragments.length - 1) {
-            const clone = span.cloneNode(true) as HTMLElement;
-            clone.addEventListener('mouseenter', (e) => {
-              const rect = clone.getBoundingClientRect();
-              const tooltip = createTooltip(word, translation, uid);
-              positionTooltip(tooltip, rect);
-            });
-            parent.insertBefore(clone, node);
-          }
+        
+        span.addEventListener('mouseenter', (e) => {
+          const rect = span.getBoundingClientRect();
+          const tooltip = createTooltip(lowerWord, translation, uid);
+          positionTooltip(tooltip, rect);
         });
-        parent.removeChild(node);
-      });
+
+        fragment.appendChild(span);
+        lastIndex = match.index + matchedWord.length;
+      }
+
+      // Add any trailing text
+      if (lastIndex < text.length) {
+        fragment.appendChild(document.createTextNode(text.substring(lastIndex)));
+      }
+
+      parent.replaceChild(fragment, node);
     });
 
     document.addEventListener('click', (e) => {
