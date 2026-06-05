@@ -148,30 +148,6 @@ After each save, go to `chrome://extensions` and click the refresh icon on the L
 
 ---
 
-## API Keys
-
-All credentials are preconfigured in the codebase. Here is a reference:
-
-### Gemini API
-```
-Key: AIzaSyC0NDbA1GhusH5YHr2f4L7YhUMK5O94PyU
-Endpoint: https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent
-```
-
-### ElevenLabs
-```
-Key: sk_8a7a2a8957bb806497506a635b22f970080797881992ea28
-Voice: pNInz6obpgDQGcFmaJgB (Adam, multilingual)
-Model: eleven_multilingual_v2
-```
-
----
-
-
----
-
-
-
 ## Local Storage Shape
 
 The extension stores a small local profile in `chrome.storage.local`:
