@@ -1,0 +1,48 @@
+type User @table {
+  displayName: String!
+  email: String!
+  createdAt: Timestamp!
+  targetLanguage: Language!
+  profilePictureUrl: String
+  learningLevel: String
+}
+
+type Language @table {
+  name: String!
+  code: String!
+  flagIconUrl: String
+}
+
+type VocabularyWord @table {
+  originalWord: String!
+  translatedWord: String!
+  language: Language!
+  user: User!
+  createdAt: Timestamp!
+  definition: String
+  exampleSentence: String
+  isKnown: Boolean
+}
+
+type UserSetting @table {
+  user: User!
+  wordTranslationPercentage: Int!
+  difficultyLevel: String!
+  enableSoundPronunciation: Boolean
+  lastUpdatedAt: Timestamp
+}
+
+type WordList @table {
+  name: String!
+  createdAt: Timestamp!
+  isPublic: Boolean!
+  description: String
+  owner: User
+}
+
+type WordListEntry @table(key: ["wordList", "vocabularyWord"]) {
+  wordList: WordList!
+  vocabularyWord: VocabularyWord!
+  addedAt: Timestamp!
+  notes: String
+}

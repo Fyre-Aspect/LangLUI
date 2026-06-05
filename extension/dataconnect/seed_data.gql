@@ -1,0 +1,48 @@
+mutation SeedData @auth(level: USER, insecureReason: "This operation is for seeding test data only and should not be exposed in production.") @transaction {
+  language1: language_insert(data: {
+    name: "English",
+    code: "en",
+    flagIconUrl: "https://example.com/flags/en.png"
+  })
+  language2: language_insert(data: {
+    name: "Spanish",
+    code: "es",
+    flagIconUrl: "https://example.com/flags/es.png"
+  })
+  user1: user_insert(data: {
+    displayName: "John Doe",
+    email: "john.doe@example.com",
+    createdAt: "2023-01-01T12:00:00Z",
+    targetLanguageId_expr: "response.language1.id"
+  })
+  userSetting1: userSetting_insert(data: {
+    userId_expr: "response.user1.id",
+    wordTranslationPercentage: 75,
+    difficultyLevel: "Intermediate",
+    enableSoundPronunciation: true,
+    lastUpdatedAt: "2023-01-01T12:05:00Z"
+  })
+  wordList1: wordList_insert(data: {
+    name: "Common English Phrases",
+    createdAt: "2023-01-01T12:10:00Z",
+    isPublic: true,
+    description: "A list of commonly used English phrases for beginners.",
+    ownerId_expr: "response.user1.id"
+  })
+  vocabWord1: vocabularyWord_insert(data: {
+    originalWord: "Hello",
+    translatedWord: "Hola",
+    languageId_expr: "response.language1.id",
+    userId_expr: "response.user1.id",
+    createdAt: "2023-01-01T12:15:00Z",
+    definition: "A greeting",
+    exampleSentence: "Hello, how are you?",
+    isKnown: true
+  })
+  wordListEntry1: wordListEntry_insert(data: {
+    wordListId_expr: "response.wordList1.id",
+    vocabularyWordId_expr: "response.vocabWord1.id",
+    addedAt: "2023-01-01T12:20:00Z",
+    notes: "Easy to remember"
+  })
+}
