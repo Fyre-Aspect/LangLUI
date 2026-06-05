@@ -52,27 +52,6 @@ Progress is stored locally in the extension (no login required).
 
 ---
 
-## 📁 Project Structure
-
-```
-langlua/
-├── webapp/           # React + TypeScript web dashboard
-│   └── src/
-│       ├── components/
-│       ├── pages/
-│       ├── services/
-│       └── hooks/
-│
-└── extension/        # Chrome Extension (Manifest V3)
-    └── src/
-        ├── background/   # Service worker
-        ├── content/      # DOM injection & tooltip
-      ├── popup/        # Extension popup UI
-      └── services/     # Gemini, ElevenLabs
-```
-
----
-
 ## Setup & Installation
 
 ### Prerequisites
@@ -165,16 +144,7 @@ The extension stores a small local profile in `chrome.storage.local`:
 
 ---
 
-## 🌍 Supported Languages
-
-Japanese 🇯🇵 
-Spanish 🇪🇸 
-French 🇫🇷 
-Hindi 🇮🇳 
-
----
-
-## 🛠️ Development Notes
+## Development Notes
 
 ### Extension Rebuild After Changes
 The extension must be rebuilt and reloaded in Chrome after any source change:
