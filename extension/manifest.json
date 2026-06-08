@@ -7,20 +7,27 @@
     "storage",
     "activeTab",
     "scripting",
-    "tabs",
-    "identity"
+    "tabs"
   ],
-  "oauth2": {
-    "client_id": "118999772188-f8a0tq5a630628f18mhrusmp1sungpp9.apps.googleusercontent.com",
-    "scopes": [
-      "openid",
-      "email",
-      "profile"
-    ]
-  },
   "host_permissions": [
     "<all_urls>"
   ],
+  "commands": {
+    "toggle-practice-mode": {
+      "suggested_key": {
+        "default": "Ctrl+Shift+P",
+        "mac": "Command+Shift+P"
+      },
+      "description": "Toggle LangLua practice mode"
+    },
+    "open-sidebar": {
+      "suggested_key": {
+        "default": "Ctrl+Shift+S",
+        "mac": "Command+Shift+S"
+      },
+      "description": "Open LangLua sidebar"
+    }
+  },
   "background": {
     "service_worker": "background.js"
   },

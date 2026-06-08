@@ -1,4 +1,5 @@
 import { COMMON_TRANSLATIONS } from '../utils/wordSelector';
+import { addWordHistory } from './historyService';
 
 declare const GEMINI_API_KEY: string;
 const FLASH = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`;
@@ -98,6 +99,14 @@ export async function translateWords(
     await processBatch(currentBatch);
   }
 
+  if (Object.keys(result).length > 0) {
+    await Promise.allSettled(
+      Object.entries(result).map(([word, translation]) =>
+        addWordHistory(word, translation, lang, getWordDifficulty(word))
+      )
+    );
+  }
+
   return result;
 }
 
@@ -137,4 +146,11 @@ export async function checkGuess(original: string, guess: string, lang?: string,
 
 export async function getDefinition(original: string, context?: string): Promise<string> {
   return `Definition for "${original}" (Translation mode only).`;
+}
+
+export function getWordDifficulty(word: string): 'easy' | 'medium' | 'hard' {
+  const length = word.trim().length;
+  if (length <= 4) return 'easy';
+  if (length <= 7) return 'medium';
+  return 'hard';
 }

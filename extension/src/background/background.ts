@@ -53,4 +53,29 @@ chrome.runtime.onMessage.addListener((request: any, sender: any, sendResponse: a
   }
 });
 
+chrome.commands.onCommand.addListener((command) => {
+  if (command === 'toggle-practice-mode') {
+    chrome.storage.local.get(['practiceMode'], (result) => {
+      const nextMode = !result.practiceMode;
+      chrome.storage.local.set({ practiceMode: nextMode }, () => {
+        chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+          const tabId = tabs[0]?.id;
+          if (tabId) {
+            chrome.tabs.sendMessage(tabId, { type: 'TOGGLE_PRACTICE', value: nextMode });
+          }
+        });
+      });
+    });
+  }
+
+  if (command === 'open-sidebar') {
+    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+      const tabId = tabs[0]?.id;
+      if (tabId) {
+        chrome.tabs.sendMessage(tabId, { type: 'OPEN_SIDEBAR' });
+      }
+    });
+  }
+});
+
 export {};

@@ -33,13 +33,6 @@ module.exports = {
       GEMINI_API_KEY: JSON.stringify(process.env.GEMINI_API_KEY),
       ELEVENLABS_API_KEY: JSON.stringify(process.env.ELEVENLABS_API_KEY),
       ELEVENLABS_VOICE_ID: JSON.stringify(process.env.ELEVENLABS_VOICE_ID),
-      INSERTKEY: JSON.stringify(process.env.INSERTKEY),
-      FIREBASEAUTHDOMAIN: JSON.stringify(process.env.FIREBASEAUTHDOMAIN),
-      PROJECTID: JSON.stringify(process.env.PROJECTID),
-      STORAGEBUCKET: JSON.stringify(process.env.STORAGEBUCKET),
-      SENDERID: JSON.stringify(process.env.SENDERID),
-      APPID: JSON.stringify(process.env.APPID),
-      MEASUREMENTID: JSON.stringify(process.env.MEASUREMENTID),
     }),
     new CopyWebpackPlugin({
       patterns: [

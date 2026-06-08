@@ -58,7 +58,31 @@
 
         <div class="divider"></div>
 
+        <div class="stat-row">
+          <span class="stat-label">History</span>
+          <span class="stat-value" id="history-count">—</span>
+        </div>
+        <div class="stat-row">
+          <span class="stat-label">Difficulty</span>
+          <span class="stat-value" id="difficulty-breakdown">—</span>
+        </div>
+
+        <div class="divider"></div>
+
         <div class="actions">
+          <button id="start-quiz-btn" class="btn btn-primary">Start Daily Quiz</button>
+          <button id="export-history-btn" class="btn btn-ghost">Export History</button>
+          <button id="clear-history-btn" class="btn btn-ghost">Clear History</button>
+        </div>
+
+        <div id="quiz-panel" class="quiz-panel hidden">
+          <div class="quiz-header">Daily Quiz</div>
+          <div id="quiz-question" class="quiz-question">Ready to practice? Tap a word to begin.</div>
+          <div id="quiz-options" class="quiz-options"></div>
+          <div id="quiz-feedback" class="quiz-feedback"></div>
+          <div class="quiz-actions">
+            <button id="close-quiz-btn" class="btn btn-ghost">Close Quiz</button>
+          </div>
         </div>
       </div>
 
