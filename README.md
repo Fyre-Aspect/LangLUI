@@ -109,3 +109,5 @@ After each save, go to `chrome://extensions` and click the refresh icon on the L
 Built at EurekaHacks 2026
 By Aamir, Jeevithan, and Arnav
 ---
+
+https://github.com/user-attachments/assets/f2ff83e0-2a1b-4aea-a528-d60efe85450d
