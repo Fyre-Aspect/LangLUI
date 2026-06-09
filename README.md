@@ -13,6 +13,8 @@ When you hover over a replaced word, you get:
 2. **Definitions** — guess what the word means and earn credits
 3. **AI-powered definition** via Gemini if you just want to learn passively
 
+Supported Languages - Hindi, Japanese, and Spanish.
+
 Progress is stored locally in the extension (no login required).
 
 ---
