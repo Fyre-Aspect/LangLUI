@@ -40,8 +40,7 @@ Progress is stored locally in the extension (no login required).
 | **Web App Frontend** | React 18, TypeScript, Vite |
 | **Web App Styling** | CSS Variables (custom design system), Lucide Icons |
 | **Extension** | Chrome Extension Manifest V3, TypeScript, Webpack |
-| **AI Translations** | Google Gemini API (`gemini-2.0-flash`) |
-| **AI Definitions** | Google Gemini API |
+| **AI Translations & Definitions** | Google Gemini API (`gemini-2.0-flash`) |
 | **Pronunciation** | ElevenLabs Text-to-Speech (`eleven_multilingual_v2`) |
 
 ---
@@ -97,6 +96,11 @@ After each save, go to `chrome://extensions` and click the refresh icon on the L
 - [ ] Multiplayer word challenges
 
 ---
+
+## AI Usage
+- Gemini is used for translations.
+- ElevenLabs used for Audio translations.
+- Used AI to code basic backend setup and frontend architecture.
 
 ## Team
 
