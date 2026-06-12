@@ -48,4 +48,12 @@ The extension must be rebuilt and reloaded in Chrome after any changes.
 
 - To do this, simply run npm run build.
 
+<h2>AI Usage</h2>
+
+AI was used to:
+- Set up the architecture of files.
+- Understanding how to and what is needed to make the extension.
+- Write complex features such as the Try Out Mode.
+- Research purposes to find what API's to use and how to integrate them.
+
 https://github.com/user-attachments/assets/0e6be8b1-598d-4f30-8e2b-bc92dae5605a
