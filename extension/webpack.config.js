@@ -3,7 +3,7 @@ const webpack = require('webpack');
 const CopyWebpackPlugin = require('copy-webpack-plugin');
 require('dotenv').config();
 
-module.exports = {
+x = {
   mode: 'development',
   devtool: 'cheap-module-source-map',
   entry: {

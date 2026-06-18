@@ -2,7 +2,10 @@
   "permissions": {
     "allow": [
       "Bash(npm run *)",
-      "Bash(npx webpack *)"
+      "Bash(npx webpack *)",
+      "Bash(python3 -c ' *)",
+      "Bash(grep -nvE '^This is random line [0-9]+$' /Users/sameetmandewalker/Documents/LangLUI/random_stuff.txt)",
+      "mcp__genouk-memory__remember"
     ]
   }
 }
